@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id               Int             @id @default(autoincrement())
+  companyName      String
+  hrName           String
+  email            String          @unique
+  phone            String?
+  employeeLimit    Int             @default(100)
+  currentEmployees Int             @default(0)
+  status           String          @default("active")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  hrAdmins         HrAdmin[]
+  employees        Employee[]
+  holidays         Holiday[]
+  attendanceSettings AttendanceSettings?
+}
+
+model HrAdmin {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String    @unique
+  password       String
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  status         String    @default("active")
+  profilePic     String?
+  lastLogin      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  employees      Employee[]
+}
+
+model Employee {
+  id             Int       @id @default(autoincrement())
+  employeeId     String    @unique
+  name           String
+  email          String    @unique
+  password       String
+  phone          String
+  department     String?
+  position       String?
+  role           String?
+  status         String    @default("active")
+  profilePic     String?
+  notificationPreferences Json?
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  hrAdminId      Int?
+  hrAdmin        HrAdmin?  @relation(fields: [hrAdminId], references: [id])
+  lastLogin      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  attendance     Attendance[]
+  leaveRequests  LeaveRequest[]
+  lateRequests   LateRequest[]
+}
+
+model Attendance {
+  id              Int      @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee @relation(fields: [employeeId], references: [id])
+  date            DateTime @map("date")
+  checkInTime     String?
+  checkOutTime    String?
+  checkInTimestamp DateTime?
+  checkOutTimestamp DateTime?
+  status          String   @default("absent")
+  lateMinutes     Int?     @default(0)
+  totalHours      Float?   @default(0)
+  lateReason           String?
+  earlyCheckoutReason  String?
+  createdAt       DateTime @default(now())
+
+  @@unique([employeeId, date])
+}
+
+model LeaveRequest {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  type        String
+  date        DateTime
+  reason      String
+  status      String   @default("pending")
+  approvedBy  Int?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LateRequest {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  date        DateTime
+  reason      String
+  checkInTime String?
+  status      String   @default("pending")
+  approvedBy  Int?
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Holiday {
+  id             Int          @id @default(autoincrement())
+  name           String
+  date           DateTime
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+}
+
+model AttendanceSettings {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @unique
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  officeStart    String       @default("09:00")
+  officeEnd      String       @default("18:00")
+  graceTime      Int          @default(15)
+  workHours      Float        @default(8)
+  lateThreshold  String       @default("09:15")
+  locationLat    Float?
+  locationLng    Float?
+  locationRadius Int?
+  updatedAt      DateTime     @updatedAt
+}
+
+model Enquiry {
+  id             Int      @id @default(autoincrement())
+  companyName    String
+  hrName         String
+  email          String
+  phone          String
+  employeeSize   Int
+  message        String?
+  status         String   @default("pending")
+  submittedDate  DateTime @default(now())
+  processedAt    DateTime?
+}
+
+model SuperAdmin {
+  id                        Int      @id @default(autoincrement())
+  name                      String
+  email                     String   @unique
+  password                  String
+  status                    String   @default("active")
+  profilePic                String?
+  notificationPreferences   Json?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userEmail String   @unique
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  token     String
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
+
