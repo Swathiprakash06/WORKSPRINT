@@ -31,21 +31,7 @@ const Dashboard = ({
   };
 
   const [todayStatus, setTodayStatus] = useState(() => {
-    // Load from localStorage on initialization for individual user
-    const saved = localStorage.getItem(todayStatusKey);
-    const todayDate = getCurrentDate();
-    const savedDate = localStorage.getItem(todayStatusDateKey);
-
-    // Only use saved status if it's for today
-    if (saved && savedDate === todayDate) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing saved todayStatus:', e);
-      }
-    }
-
-    // Default state
+    // Initialize with default state - backend data will override this on load
     return {
       checkedIn: false,
       checkedOut: false,
@@ -59,13 +45,6 @@ const Dashboard = ({
   useEffect(() => {
     setLocalAttendanceLogs(attendanceLogs);
   }, [attendanceLogs]);
-
-  // Save todayStatus to localStorage whenever it changes (per user)
-  useEffect(() => {
-    const todayDate = getCurrentDate();
-    localStorage.setItem(todayStatusKey, JSON.stringify(todayStatus));
-    localStorage.setItem(todayStatusDateKey, todayDate);
-  }, [todayStatus, todayStatusKey, todayStatusDateKey]);
 
   // Normalize Date object to local YYYY-MM-DD string (safe against timezone shifts)
   const getDateKey = (dateInput) => {
@@ -151,17 +130,60 @@ const Dashboard = ({
   useEffect(() => {
     const todayDate = getDateKey(new Date());
     const todayLog = localAttendanceLogs.find(log => log.date === todayDate);
-    
+
     if (todayLog) {
-      setTodayStatus({
+      const newStatus = {
         checkedIn: !!todayLog.checkInTime,
         checkedOut: !!todayLog.checkOutTime,
         checkInTime: todayLog.checkInTime,
         checkOutTime: todayLog.checkOutTime,
         status: todayLog.status || "absent"
-      });
+      };
+      setTodayStatus(newStatus);
+    } else {
+      // No backend data for today, check localStorage as fallback
+      const saved = localStorage.getItem(todayStatusKey);
+      const todayDate = getCurrentDate();
+      const savedDate = localStorage.getItem(todayStatusDateKey);
+
+      if (saved && savedDate === todayDate) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Only use localStorage if it has check-in data (not just default absent state)
+          if (parsed.checkedIn || parsed.checkedOut) {
+            setTodayStatus(parsed);
+          } else {
+            // Reset to default if no real check-in data
+            setTodayStatus({
+              checkedIn: false,
+              checkedOut: false,
+              checkInTime: null,
+              checkOutTime: null,
+              status: "absent"
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing saved todayStatus:', e);
+          setTodayStatus({
+            checkedIn: false,
+            checkedOut: false,
+            checkInTime: null,
+            checkOutTime: null,
+            status: "absent"
+          });
+        }
+      } else {
+        // No saved data for today
+        setTodayStatus({
+          checkedIn: false,
+          checkedOut: false,
+          checkInTime: null,
+          checkOutTime: null,
+          status: "absent"
+        });
+      }
     }
-  }, [localAttendanceLogs]);
+  }, [localAttendanceLogs, todayStatusKey, todayStatusDateKey]);
 
   const finalizeCheckIn = (checkInData) => {
     const todayDate = checkInData.date;
@@ -172,6 +194,10 @@ const Dashboard = ({
       checkOutTime: null,
       status: checkInData.status,
     });
+
+    // Clear any conflicting localStorage data since backend is now source of truth
+    localStorage.removeItem(todayStatusKey);
+    localStorage.removeItem(todayStatusDateKey);
 
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
     if (existingLogIndex >= 0) {
@@ -257,6 +283,10 @@ const Dashboard = ({
       checkedOut: true,
       checkOutTime: currentTime,
     }));
+
+    // Clear any conflicting localStorage data since backend is now source of truth
+    localStorage.removeItem(todayStatusKey);
+    localStorage.removeItem(todayStatusDateKey);
 
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
     if (existingLogIndex >= 0) {
