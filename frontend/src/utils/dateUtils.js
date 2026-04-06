@@ -2,6 +2,38 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { enIN } from 'date-fns/locale';
 
+const INDIA_TIMEZONE = 'Asia/Kolkata';
+
+const getTimeZoneDateParts = (date, timeZone = INDIA_TIMEZONE) => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  return formatter.formatToParts(date).reduce((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+};
+
+const getIndiaDate = (date = new Date()) => {
+  const parts = getTimeZoneDateParts(date);
+  return new Date(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+};
+
 /**
  * Format date to DD/MM/YYYY format
  * @param {string|Date} date - Date to format
@@ -63,12 +95,11 @@ export const formatTime = (time) => {
  * @returns {string} Current date in YYYY-MM-DD format
  */
 export const getCurrentDate = () => {
-  return format(new Date(), 'yyyy-MM-dd');
+  return format(getIndiaDate(), 'yyyy-MM-dd');
 };
 
 /**
- * Calendar date in YYYY-MM-DD using the browser's local timezone.
- * Avoids UTC day-shift from `toISOString().split('T')[0]` on midnight DateTime values from the API.
+ * Calendar date in YYYY-MM-DD using Mumbai timezone.
  */
 export const toLocalDateKey = (dateInput) => {
   if (!dateInput) return '';
@@ -81,7 +112,7 @@ export const toLocalDateKey = (dateInput) => {
     }
     const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
     if (!isValid(d)) return '';
-    return format(d, 'yyyy-MM-dd');
+    return format(getIndiaDate(d), 'yyyy-MM-dd');
   } catch {
     return '';
   }
@@ -91,7 +122,7 @@ export const toLocalDateKey = (dateInput) => {
  * Current clock time as 24h "HH:mm" for comparisons (isLate, working hours, API payloads).
  */
 export const getCurrentTime = () => {
-  return format(new Date(), 'HH:mm');
+  return format(getIndiaDate(), 'HH:mm');
 };
 
 /** Split 24h "HH:mm" into 12h clock parts for pickers */
@@ -189,7 +220,7 @@ export const formatDuration = (minutes) => {
  * @returns {string} Current date in DD/MM/YYYY format
  */
 export const getTodayDate = () => {
-  return format(new Date(), 'dd/MM/yyyy');
+  return format(getIndiaDate(), 'dd/MM/yyyy');
 };
 
 /**
@@ -217,9 +248,7 @@ export const isToday = (date) => {
   if (!date) return false;
 
   const dateObj = typeof date === 'string' ? parseISO(date) : new Date(date);
-  const today = new Date();
-
-  return format(dateObj, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+  return format(getIndiaDate(dateObj), 'yyyy-MM-dd') === format(getIndiaDate(), 'yyyy-MM-dd');
 };
 
 /**

@@ -1,5 +1,37 @@
 // utils/dateUtils.js
-const { format, parseISO, isValid, startOfDay, endOfDay } = require('date-fns');
+const { format, parseISO, isValid } = require('date-fns');
+
+const INDIA_TIMEZONE = 'Asia/Kolkata';
+
+const getTimeZoneDateParts = (date, timeZone = INDIA_TIMEZONE) => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+
+  return formatter.formatToParts(date).reduce((acc, part) => {
+    if (part.type !== 'literal') acc[part.type] = part.value;
+    return acc;
+  }, {});
+};
+
+const getIndiaNow = () => {
+  const parts = getTimeZoneDateParts(new Date());
+  return new Date(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second)
+  );
+};
 
 /**
  * Create a date-only Date object (without time/timezone) for database storage
@@ -24,8 +56,8 @@ const createDateOnly = (date) => {
 
   if (!isValid(dateObj)) return null;
 
-  // Create a date-only object (no time, no timezone offset)
-  return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+  const parts = getTimeZoneDateParts(dateObj);
+  return new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
 };
 
 /**
@@ -33,8 +65,7 @@ const createDateOnly = (date) => {
  * @returns {string} Current date string
  */
 const getCurrentDateString = () => {
-  const now = new Date();
-  return format(now, 'yyyy-MM-dd');
+  return format(getIndiaNow(), 'yyyy-MM-dd');
 };
 
 /**
@@ -42,8 +73,7 @@ const getCurrentDateString = () => {
  * @returns {string} Current time string
  */
 const getCurrentTimeString = () => {
-  const now = new Date();
-  return format(now, 'HH:mm');
+  return format(getIndiaNow(), 'HH:mm');
 };
 
 /**
@@ -120,5 +150,6 @@ module.exports = {
   isLate,
   getMonthDateRange,
   formatDateForAPI,
-  parseDateFromFrontend
+  parseDateFromFrontend,
+  getIndiaNow
 };

@@ -1,8 +1,9 @@
 const cron = require('node-cron');
 const prisma = require('../db/prismaClient');
+const { getIndiaNow } = require('../utils/dateUtils');
 
 const markAbsentAfterHours = async () => {
-  const today = new Date();
+  const today = getIndiaNow();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
 
@@ -26,15 +27,19 @@ const markAbsentAfterHours = async () => {
 };
 
 const initCronJobs = () => {
-  // run every day at 19:00
-  cron.schedule('0 19 * * *', async () => {
-    try {
-      await markAbsentAfterHours();
-      console.log('Cron: auto-mark absent task completed');
-    } catch (error) {
-      console.error('Cron error:', error);
-    }
-  });
+  // run every day at 19:00 India time
+  cron.schedule(
+    '0 19 * * *',
+    async () => {
+      try {
+        await markAbsentAfterHours();
+        console.log('Cron: auto-mark absent task completed');
+      } catch (error) {
+        console.error('Cron error:', error);
+      }
+    },
+    { timezone: 'Asia/Kolkata' }
+  );
 };
 
 module.exports = { initCronJobs, markAbsentAfterHours };
