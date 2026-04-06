@@ -187,7 +187,22 @@ const EmployeePanel = ({
       if (newAttendance.checkedIn && !newAttendance.checkedOut) {
         const geo = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+          
+          const timeoutId = setTimeout(() => {
+            reject(new Error('Geolocation request timed out. Please check your location permissions.'));
+          }, 10000); // 10 second timeout
+          
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              clearTimeout(timeoutId);
+              resolve(position);
+            },
+            (error) => {
+              clearTimeout(timeoutId);
+              reject(new Error(`Geolocation failed: ${error.message}`));
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
         });
 
         const res = await apiPost('/api/v1/employee/attendance/check-in', {
@@ -214,7 +229,22 @@ const EmployeePanel = ({
       if (newAttendance.checkedOut) {
         const geo = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+          
+          const timeoutId = setTimeout(() => {
+            reject(new Error('Geolocation request timed out. Please check your location permissions.'));
+          }, 10000); // 10 second timeout
+          
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              clearTimeout(timeoutId);
+              resolve(position);
+            },
+            (error) => {
+              clearTimeout(timeoutId);
+              reject(new Error(`Geolocation failed: ${error.message}`));
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
         });
 
         const res = await apiPost('/api/v1/employee/attendance/check-out', {

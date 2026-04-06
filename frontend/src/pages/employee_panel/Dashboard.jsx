@@ -275,9 +275,12 @@ const Dashboard = ({
     setModalReason("");
   };
 
-  const finalizeCheckOut = (row) => {
+  const finalizeCheckOut = async (row) => {
     const currentTime = row.checkOutTime;
     const todayDate = getDateKey(new Date());
+
+    console.log("Finalizing checkout with row:", row);
+
     setTodayStatus((prev) => ({
       ...prev,
       checkedOut: true,
@@ -296,7 +299,17 @@ const Dashboard = ({
         ...row,
       };
       setLocalAttendanceLogs(updatedLogs);
-      if (externalCheckOut) externalCheckOut(updatedLogs[existingLogIndex]);
+
+      // Call external checkOut function (updateAttendance)
+      if (externalCheckOut) {
+        try {
+          await externalCheckOut(updatedLogs[existingLogIndex]);
+          console.log("External checkout completed successfully");
+        } catch (error) {
+          console.error("External checkout failed:", error);
+          // Don't show error here as updateAttendance already shows toast
+        }
+      }
     }
 
     toast.success(`Checked out successfully at ${formatTime(currentTime)}`);
@@ -341,28 +354,47 @@ const Dashboard = ({
         ...localAttendanceLogs[existingLogIndex],
         ...checkOutPatch,
       };
-      finalizeCheckOut(row);
+      finalizeCheckOut(row).catch((error) => {
+        console.error("Failed to finalize normal checkout:", error);
+      });
     }
   };
 
   const confirmEarlyModal = () => {
-    if (!attendanceModal || attendanceModal.kind !== "early") return;
+    if (!attendanceModal || attendanceModal.kind !== "early") {
+      console.error("Invalid modal state for early checkout");
+      return;
+    }
+
     const trimmed = modalReason.trim();
     if (!trimmed) {
       toast.error("Please enter a reason for early check-out");
       return;
     }
+
     const todayDate = getDateKey(new Date());
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
-    if (existingLogIndex < 0) return;
+
+    if (existingLogIndex < 0) {
+      console.error("No attendance log found for today during early checkout");
+      toast.error("No check-in record found for today. Please check in first.");
+      return;
+    }
+
     const row = {
       ...localAttendanceLogs[existingLogIndex],
       ...attendanceModal.checkOutPatch,
       earlyCheckoutReason: trimmed,
     };
-    finalizeCheckOut(row);
-    setAttendanceModal(null);
-    setModalReason("");
+
+    console.log("Processing early checkout:", row);
+    finalizeCheckOut(row).then(() => {
+      setAttendanceModal(null);
+      setModalReason("");
+    }).catch((error) => {
+      console.error("Failed to finalize early checkout:", error);
+      // Modal will stay open so user can try again
+    });
   };
 
   // Get status color with today's actual status
