@@ -111,18 +111,7 @@ const EmployeePanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
-  // Save data to localStorage when it changes
-  useEffect(() => {
-    if (attendanceLogs.length > 0) {
-      localStorage.setItem('attendanceLogs', JSON.stringify(attendanceLogs));
-    }
-  }, [attendanceLogs]);
-
-  useEffect(() => {
-    if (requests.length > 0) {
-      localStorage.setItem('employeeRequests', JSON.stringify(requests));
-    }
-  }, [requests]);
+  // Data is now managed by state and backend only
 
   const addRequest = async (newRequest) => {
     try {
@@ -305,10 +294,10 @@ const EmployeePanel = ({
 
   // Default user if none provided (for demo)
   const defaultUser = {
-    name: localStorage.getItem('employeeName') || 'Employee',
-    email: localStorage.getItem('employeeEmail') || 'employee@company.com',
-    id: localStorage.getItem('employeeId') || 'EMP001',
-    department: localStorage.getItem('employeeDepartment') || 'General'
+    name: 'Employee',
+    email: 'employee@company.com',
+    id: 'EMP001',
+    department: 'General'
   };
 
   const currentUser = user || defaultUser;

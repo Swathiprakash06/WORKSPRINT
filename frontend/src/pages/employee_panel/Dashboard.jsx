@@ -141,47 +141,14 @@ const Dashboard = ({
       };
       setTodayStatus(newStatus);
     } else {
-      // No backend data for today, check localStorage as fallback
-      const saved = localStorage.getItem(todayStatusKey);
-      const todayDate = getCurrentDate();
-      const savedDate = localStorage.getItem(todayStatusDateKey);
-
-      if (saved && savedDate === todayDate) {
-        try {
-          const parsed = JSON.parse(saved);
-          // Only use localStorage if it has check-in data (not just default absent state)
-          if (parsed.checkedIn || parsed.checkedOut) {
-            setTodayStatus(parsed);
-          } else {
-            // Reset to default if no real check-in data
-            setTodayStatus({
-              checkedIn: false,
-              checkedOut: false,
-              checkInTime: null,
-              checkOutTime: null,
-              status: "absent"
-            });
-          }
-        } catch (e) {
-          console.error('Error parsing saved todayStatus:', e);
-          setTodayStatus({
-            checkedIn: false,
-            checkedOut: false,
-            checkInTime: null,
-            checkOutTime: null,
-            status: "absent"
-          });
-        }
-      } else {
-        // No saved data for today
-        setTodayStatus({
-          checkedIn: false,
-          checkedOut: false,
-          checkInTime: null,
-          checkOutTime: null,
-          status: "absent"
-        });
-      }
+      // No backend data for today, use default state
+      setTodayStatus({
+        checkedIn: false,
+        checkedOut: false,
+        checkInTime: null,
+        checkOutTime: null,
+        status: "absent"
+      });
     }
   }, [localAttendanceLogs, todayStatusKey, todayStatusDateKey]);
 
@@ -194,10 +161,6 @@ const Dashboard = ({
       checkOutTime: null,
       status: checkInData.status,
     });
-
-    // Clear any conflicting localStorage data since backend is now source of truth
-    localStorage.removeItem(todayStatusKey);
-    localStorage.removeItem(todayStatusDateKey);
 
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
     if (existingLogIndex >= 0) {
@@ -286,10 +249,6 @@ const Dashboard = ({
       checkedOut: true,
       checkOutTime: currentTime,
     }));
-
-    // Clear any conflicting localStorage data since backend is now source of truth
-    localStorage.removeItem(todayStatusKey);
-    localStorage.removeItem(todayStatusDateKey);
 
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
     if (existingLogIndex >= 0) {
