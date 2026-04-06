@@ -197,6 +197,7 @@ const EmployeePanel = ({
         const res = await apiPost('/api/v1/employee/attendance/check-in', {
           latitude: geo.coords.latitude,
           longitude: geo.coords.longitude,
+          checkInTime: newAttendance.checkInTime,
           ...(newAttendance.lateReason ? { lateReason: newAttendance.lateReason } : {}),
         });
 
@@ -239,6 +240,7 @@ const EmployeePanel = ({
         const res = await apiPost('/api/v1/employee/attendance/check-out', {
           latitude: geo.coords.latitude,
           longitude: geo.coords.longitude,
+          checkOutTime: newAttendance.checkOutTime,
           ...(newAttendance.earlyCheckoutReason ? { earlyCheckoutReason: newAttendance.earlyCheckoutReason } : {}),
         });
 

@@ -34,7 +34,7 @@ const uploadProfilePicture = catchAsync(async (req, res) => {
 });
 
 const checkIn = catchAsync(async (req, res) => {
-  const { latitude, longitude, lateReason } = req.body;
+  const { latitude, longitude, lateReason, checkInTime } = req.body;
   const employee = await prisma.employee.findUnique({ where: { id: Number(req.user.id) } });
   if (!employee) throw new AppError('Employee not found', 404);
 
@@ -61,7 +61,8 @@ const checkIn = catchAsync(async (req, res) => {
 
   const today = new Date();
   const dateOnly = createDateOnly(today);
-  const currentTime = getCurrentTimeString();
+  // Use client's time if provided, otherwise use server time
+  const currentTime = checkInTime || getCurrentTimeString();
 
   const officeStart = settings?.officeStart || '09:00';
   const graceTime = settings?.graceTime ?? 15;
@@ -98,7 +99,7 @@ const checkIn = catchAsync(async (req, res) => {
 });
 
 const checkOut = catchAsync(async (req, res) => {
-  const { latitude, longitude, earlyCheckoutReason } = req.body;
+  const { latitude, longitude, earlyCheckoutReason, checkOutTime } = req.body;
   const employee = await prisma.employee.findUnique({ where: { id: Number(req.user.id) } });
   if (!employee) throw new AppError('Employee not found', 404);
 
@@ -125,7 +126,8 @@ const checkOut = catchAsync(async (req, res) => {
 
   const today = new Date();
   const dateOnly = createDateOnly(today);
-  const currentTime = getCurrentTimeString();
+  // Use client's time if provided, otherwise use server time
+  const currentTime = checkOutTime || getCurrentTimeString();
 
   const existing = await prisma.attendance.findUnique({ where: { employeeId_date: { employeeId: employee.id, date: dateOnly } } });
   if (!existing) throw new AppError('Check in first', 400);
