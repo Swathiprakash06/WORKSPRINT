@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "seed": "node src/scripts/seedSuperAdmin.js",
     "prisma:generate": "prisma generate",
     "migrate": "prisma migrate dev --name init",
     "lint": "eslint .",

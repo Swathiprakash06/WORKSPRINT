@@ -3,8 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { enquiryStyles } from '../styles';
 import Footer from '../components/Footer';
+import { API_BASE_URL } from '../services/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 console.log('🌐 API_BASE_URL:', API_BASE_URL);
 const Login = () => {
   const navigate = useNavigate();

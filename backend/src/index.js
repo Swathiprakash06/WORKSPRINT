@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const { errorHandler } = require('./middlewares/errorMiddleware');
 const { initCronJobs } = require('./cron/cronJobs');
+const seedSuperAdmin = require('./scripts/seedSuperAdmin');
 const authRoutes = require('./routes/authRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const hrAdminRoutes = require('./routes/hrAdminRoutes');
@@ -57,7 +58,15 @@ const { notFound } = require('./middlewares/errorMiddleware');
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`WORKSPRINT backend started on ${PORT}`);
+  
+  // Seed super admin if not exists
+  try {
+    await seedSuperAdmin();
+  } catch (error) {
+    console.error('Failed to seed super admin:', error);
+  }
+  
   initCronJobs();
 });

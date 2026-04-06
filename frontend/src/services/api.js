@@ -1,5 +1,8 @@
 // API utility for making authenticated requests
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = rawApiBaseUrl
+  ? rawApiBaseUrl.replace(/\/+$, '').replace(/\/api\/v1$/, '')
+  : 'http://localhost:3000';
 
 const logoutAndRedirect = () => {
   sessionStorage.clear();

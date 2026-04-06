@@ -3,8 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { enquiryStyles } from '../styles';
 import Footer from '../components/Footer';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+import { API_BASE_URL } from '../services/api';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
