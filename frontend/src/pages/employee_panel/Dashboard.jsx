@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 import { employeeStyles } from "../../styles";
-import { getLateDuration, formatDuration, getCurrentTime, getCurrentDate, isLate, formatTime } from "../../utils/dateUtils";
+import { getLateDuration, formatDuration, getCurrentTime, getCurrentDate, isLate, formatTime, toLocalDateKey } from "../../utils/dateUtils";
 
 const Dashboard = ({
   attendanceLogs = [],
@@ -46,27 +46,17 @@ const Dashboard = ({
     setLocalAttendanceLogs(attendanceLogs);
   }, [attendanceLogs]);
 
-  // Normalize Date object to local YYYY-MM-DD string (safe against timezone shifts)
-  const getDateKey = (dateInput) => {
-    if (!dateInput) return null;
-    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   // Check if today is a holiday or weekend
   const isHolidayOrWeekend = () => {
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
-    const todayStr = getDateKey(today);
+    const todayStr = toLocalDateKey(today);
 
     // Check if it's a weekend
     if (dayOfWeek === 0 || dayOfWeek === 6) return true;
 
     // Check if it's a holiday
-    return holidays?.some(h => getDateKey(h.date) === todayStr);
+    return holidays?.some(h => toLocalDateKey(h.date) === todayStr);
   };
 
   // Get button text based on state
@@ -94,7 +84,7 @@ const Dashboard = ({
   useEffect(() => {
     const checkEndOfDay = () => {
       const currentTime = getCurrentTime();
-      const todayDate = getDateKey(new Date());
+      const todayDate = toLocalDateKey(new Date());
       
       // If it's after working hours and user hasn't checked in
       if (currentTime > workingHours.end && !todayStatus.checkedIn) {
@@ -128,7 +118,7 @@ const Dashboard = ({
 
   // Load today's status from existing logs on component mount and when logs change
   useEffect(() => {
-    const todayDate = getDateKey(new Date());
+    const todayDate = toLocalDateKey(new Date());
     const todayLog = localAttendanceLogs.find(log => log.date === todayDate);
 
     if (todayLog) {
@@ -186,7 +176,7 @@ const Dashboard = ({
 
   const handleCheckIn = () => {
     const now = new Date();
-    const todayDate = getDateKey(new Date());
+    const todayDate = toLocalDateKey(new Date());
     const currentTime = getCurrentTime();
 
     if (isHolidayOrWeekend()) {
@@ -240,7 +230,7 @@ const Dashboard = ({
 
   const finalizeCheckOut = async (row) => {
     const currentTime = row.checkOutTime;
-    const todayDate = getDateKey(new Date());
+    const todayDate = toLocalDateKey(new Date());
 
     console.log("Finalizing checkout with row:", row);
 
@@ -276,7 +266,7 @@ const Dashboard = ({
 
   const handleCheckOut = () => {
     const now = new Date();
-    const todayDate = getDateKey(new Date());
+    const todayDate = toLocalDateKey(new Date());
     const currentTime = getCurrentTime();
 
     if (!todayStatus.checkedIn) {
@@ -331,7 +321,7 @@ const Dashboard = ({
       return;
     }
 
-    const todayDate = getDateKey(new Date());
+    const todayDate = toLocalDateKey(new Date());
     const existingLogIndex = localAttendanceLogs.findIndex((log) => log.date === todayDate);
 
     if (existingLogIndex < 0) {
@@ -358,11 +348,11 @@ const Dashboard = ({
 
   // Get status color with today's actual status
   const getStatusColor = (date, attendanceLogs = []) => {
-    const dateStr = getDateKey(date);
-    const todayDate = getDateKey(new Date());
+    const dateStr = toLocalDateKey(date);
+    const todayDate = toLocalDateKey(new Date());
 
     // Dynamic holidays from backend (any date)
-    const holiday = holidays?.find(h => getDateKey(h.date) === dateStr);
+    const holiday = holidays?.find(h => toLocalDateKey(h.date) === dateStr);
     if (holiday) return "holiday";
 
     // If date is today, show real-time status or default until marked absent at EOD.
@@ -407,15 +397,15 @@ const Dashboard = ({
 
   // Get day data from attendance logs
   const getDayData = (date, attendanceLogs = []) => {
-    const dateStr = getDateKey(date);
+    const dateStr = toLocalDateKey(date);
     return attendanceLogs.find((log) => log.date === dateStr);
   };
 
   // Get holiday data for a date
   const getHolidayData = (date, holidays = []) => {
-    const dateStr = getDateKey(date);
+    const dateStr = toLocalDateKey(date);
     // Find holiday by date - holidays is now an array of objects with date and name
-    return holidays.find(h => getDateKey(h.date) === dateStr);
+    return holidays.find(h => toLocalDateKey(h.date) === dateStr);
   };
 
   // Get tooltip text for calendar cell

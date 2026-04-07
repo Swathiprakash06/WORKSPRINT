@@ -34,7 +34,7 @@ const uploadProfilePicture = catchAsync(async (req, res) => {
 });
 
 const checkIn = catchAsync(async (req, res) => {
-  const { latitude, longitude, lateReason, checkInTime } = req.body;
+  const { latitude, longitude, lateReason, checkInTime, date: clientDate } = req.body;
   const employee = await prisma.employee.findUnique({ where: { id: Number(req.user.id) } });
   if (!employee) throw new AppError('Employee not found', 404);
 
@@ -59,8 +59,16 @@ const checkIn = catchAsync(async (req, res) => {
     }
   }
 
-  const today = new Date();
-  const dateOnly = createDateOnly(today);
+  // Use client's date if provided, otherwise calculate
+  let dateOnly;
+  if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
+    const [year, month, day] = clientDate.split('-').map(Number);
+    dateOnly = new Date(year, month - 1, day);
+  } else {
+    const today = new Date();
+    dateOnly = createDateOnly(today);
+  }
+
   // Use client's time if provided, otherwise use server time
   const currentTime = checkInTime || getCurrentTimeString();
 
@@ -76,6 +84,7 @@ const checkIn = catchAsync(async (req, res) => {
 
   const status = lateByPolicy ? 'late' : 'present';
   const reasonToStore = lateByPolicy ? String(lateReason).trim() : null;
+  const today = new Date();
 
   const attendance = await prisma.attendance.upsert({
     where: { employeeId_date: { employeeId: employee.id, date: dateOnly } },
@@ -99,7 +108,7 @@ const checkIn = catchAsync(async (req, res) => {
 });
 
 const checkOut = catchAsync(async (req, res) => {
-  const { latitude, longitude, earlyCheckoutReason, checkOutTime } = req.body;
+  const { latitude, longitude, earlyCheckoutReason, checkOutTime, date: clientDate } = req.body;
   const employee = await prisma.employee.findUnique({ where: { id: Number(req.user.id) } });
   if (!employee) throw new AppError('Employee not found', 404);
 
@@ -124,8 +133,16 @@ const checkOut = catchAsync(async (req, res) => {
     }
   }
 
-  const today = new Date();
-  const dateOnly = createDateOnly(today);
+  // Use client's date if provided, otherwise calculate
+  let dateOnly;
+  if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
+    const [year, month, day] = clientDate.split('-').map(Number);
+    dateOnly = new Date(year, month - 1, day);
+  } else {
+    const today = new Date();
+    dateOnly = createDateOnly(today);
+  }
+
   // Use client's time if provided, otherwise use server time
   const currentTime = checkOutTime || getCurrentTimeString();
 
@@ -141,7 +158,8 @@ const checkOut = catchAsync(async (req, res) => {
     }
   }
 
-  const checkInDate = existing.checkInTimestamp || today;
+  const checkInDate = existing.checkInTimestamp || new Date();
+  const today = new Date();
   const diffMs = today - checkInDate;
   const totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
 

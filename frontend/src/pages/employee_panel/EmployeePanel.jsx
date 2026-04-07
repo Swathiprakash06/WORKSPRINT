@@ -198,6 +198,7 @@ const EmployeePanel = ({
           latitude: geo.coords.latitude,
           longitude: geo.coords.longitude,
           checkInTime: newAttendance.checkInTime,
+          date: newAttendance.date,
           ...(newAttendance.lateReason ? { lateReason: newAttendance.lateReason } : {}),
         });
 
@@ -241,6 +242,7 @@ const EmployeePanel = ({
           latitude: geo.coords.latitude,
           longitude: geo.coords.longitude,
           checkOutTime: newAttendance.checkOutTime,
+          date: newAttendance.date,
           ...(newAttendance.earlyCheckoutReason ? { earlyCheckoutReason: newAttendance.earlyCheckoutReason } : {}),
         });
 
