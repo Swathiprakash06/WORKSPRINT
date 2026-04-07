@@ -228,7 +228,7 @@ const Dashboard = ({
     setModalReason("");
   };
 
-  const finalizeCheckOut = async (row) => {
+  const finalizeCheckOut = async (row, showToast = true) => {
     const currentTime = row.checkOutTime;
     const todayDate = toLocalDateKey(new Date());
 
@@ -261,7 +261,9 @@ const Dashboard = ({
       }
     }
 
-    toast.success(`Checked out successfully at ${formatTime(currentTime)}`);
+    if (showToast) {
+      toast.success(`Checked out successfully at ${formatTime(currentTime)}`);
+    }
   };
 
   const handleCheckOut = () => {
@@ -337,13 +339,18 @@ const Dashboard = ({
     };
 
     console.log("Processing early checkout:", row);
-    finalizeCheckOut(row).then(() => {
-      setAttendanceModal(null);
-      setModalReason("");
-    }).catch((error) => {
-      console.error("Failed to finalize early checkout:", error);
-      // Modal will stay open so user can try again
-    });
+    setAttendanceModal(null);
+    setModalReason("");
+    const toastId = toast.loading("Processing early checkout...");
+
+    finalizeCheckOut(row, false)
+      .then(() => {
+        toast.success(`Checked out successfully at ${formatTime(row.checkOutTime)}`, { id: toastId });
+      })
+      .catch((error) => {
+        console.error("Failed to finalize early checkout:", error);
+        toast.error(error?.message || "Failed to process early check-out", { id: toastId });
+      });
   };
 
   // Get status color with today's actual status
