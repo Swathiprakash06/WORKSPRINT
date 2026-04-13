@@ -224,7 +224,7 @@ const Enquiry = () => {
                         Submitting...
                       </>
                     ) : (
-                      'Submiyt Enquiry'
+                      'Submit Enquiry'
                     )}
                   </button>
                 </div>
