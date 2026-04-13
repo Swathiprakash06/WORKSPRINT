@@ -35,7 +35,7 @@ router.put('/late-requests/:id/approve', c.approveLate);
 router.put('/late-requests/:id/reject', c.rejectLate);
 
 router.get('/holidays', c.getHolidays);
-router.post('/holidays', [body('name').notEmpty(), body('date').isISO8601()], validateRequest, c.addHoliday);
+router.post('/holidays', [body('name').notEmpty(), body('dates').isArray({ min: 1 }), body('dates.*').isISO8601()], validateRequest, c.addHoliday);
 router.delete('/holidays/:id', c.deleteHoliday);
 
 router.get('/settings', c.getSettings);

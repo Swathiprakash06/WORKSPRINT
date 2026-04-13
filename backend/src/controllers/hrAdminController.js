@@ -252,13 +252,29 @@ const getHolidays = catchAsync(async (req, res) => {
 });
 
 const addHoliday = catchAsync(async (req, res) => {
-  const { name, date } = req.body;
-  const parsedDate = parseDateFromFrontend(date);
-  if (!parsedDate) {
-    throw new AppError('Invalid date format for holiday', 400);
+  const { name, dates } = req.body;
+  
+  if (!Array.isArray(dates) || dates.length === 0) {
+    throw new AppError('Dates must be a non-empty array', 400);
   }
-  const holiday = await prisma.holiday.create({ data: { name, date: parsedDate, organizationId: req.user.organizationId } });
-  res.status(201).json(holiday);
+
+  const holidayData = dates.map(date => {
+    const parsedDate = parseDateFromFrontend(date);
+    if (!parsedDate) {
+      throw new AppError(`Invalid date format: ${date}`, 400);
+    }
+    return { name, date: parsedDate, organizationId: req.user.organizationId };
+  });
+
+  await prisma.holiday.createMany({ data: holidayData });
+  
+  // Return all holidays to update the frontend
+  const allHolidays = await prisma.holiday.findMany({ 
+    where: { organizationId: req.user.organizationId },
+    orderBy: { date: 'asc' }
+  });
+  
+  res.status(201).json(allHolidays);
 });
 
 const deleteHoliday = catchAsync(async (req, res) => {

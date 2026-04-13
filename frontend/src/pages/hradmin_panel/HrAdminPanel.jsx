@@ -131,9 +131,9 @@ const HrAdminPanel = () => {
     try {
       const res = await apiPost('/api/v1/hr-admin/holidays', holiday);
       if (!res.ok) throw new Error((await res.json()).message || 'Failed to add holiday');
-      const created = await res.json();
-      setHolidays((prev) => [...prev, created]);
-      toast.success('Holiday added');
+      const updatedHolidays = await res.json();
+      setHolidays(updatedHolidays);
+      toast.success('Holiday(s) added successfully');
     } catch (error) {
       console.error('Add holiday failed:', error);
       toast.error(error.message || 'Could not add holiday');
