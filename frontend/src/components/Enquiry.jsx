@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { enquiryStyles } from '../styles';
 import { modalStyles  } from '../styles';
-import Footer from '../components/Footer'; // Import the Footer component
+import Footer from '../components/Footer';
 import { apiPost } from '../services/api';
 
 const Enquiry = () => {
@@ -119,7 +119,6 @@ const Enquiry = () => {
           <div className={enquiryStyles.formCard}>
             <div className={enquiryStyles.formWrapper}>
               <form onSubmit={handleSubmit}>
-                {/* First row - Company Name and HR Name */}
                 <div className={enquiryStyles.formRow}>
                   <div className={enquiryStyles.formGroup}>
                     <label className={enquiryStyles.label}>
@@ -153,8 +152,6 @@ const Enquiry = () => {
                     />
                   </div>
                 </div>
-
-                {/* Second row - Email Address and Phone Number */}
                 <div className={enquiryStyles.formRow}>
                   <div className={enquiryStyles.formGroup}>
                     <label className={enquiryStyles.label}>
@@ -189,26 +186,23 @@ const Enquiry = () => {
                   </div>
                 </div>
 
-                {/* Third row - Employee Size (full width) */}
                 <div className={enquiryStyles.formRow}>
-  <div className={enquiryStyles.formGroup}>
-    <label className={enquiryStyles.label}>
-      Employee Size
-    </label>
-    <input
-      type="text"
-      name="employeeSize"
-      value={formData.employeeSize}
-      onChange={handleChange}
-      className={enquiryStyles.input}
-      placeholder="Enter employee size (e.g., 50, 100-200, 500+)"
-      required
-      disabled={isLoading}
-    />
-  </div>
-</div>
-
-                {/* Button row */}
+                 <div className={enquiryStyles.formGroup}>
+                  <label className={enquiryStyles.label}>
+                   Employee Size
+                  </label>
+                  <input
+                  type="text"
+                  name="employeeSize"
+                  value={formData.employeeSize}
+                  onChange={handleChange}
+                  className={enquiryStyles.input}
+                  placeholder="Enter employee size (e.g., 50, 100-200, 500+)"
+                  required
+                  disabled={isLoading}
+                  />
+                 </div>
+                </div>
                 <div className={enquiryStyles.buttonRow}>
                   <button 
                     type="submit" 
@@ -239,7 +233,7 @@ const Enquiry = () => {
           </div>
         </div>
       </div>
-      <Footer /> {/* Add Footer component here */}
+      <Footer />
     </>
   );
 };
