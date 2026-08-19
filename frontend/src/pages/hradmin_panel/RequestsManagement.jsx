@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { CheckCircle, XCircle, Search } from 'lucide-react'; // ← Add Search here
 import { employeeStyles } from '../../styles';
+import Pagination from '../../components/Pagination';
 
 const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const dataRequests = Array.isArray(requests) ? requests : [];
   const lowerSearch = searchTerm.toLowerCase();
@@ -15,6 +18,7 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
     const type = (req.type || '').toString().toLowerCase();
     return employeeName.includes(lowerSearch) || type.includes(lowerSearch);
   });
+  const pagedRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
 
   const handleApprove = async (id) => {
     if (onApprove) {
@@ -77,7 +81,7 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredRequests.map(req => (
+            {pagedRequests.map(req => (
               <tr key={req.id}>
                 <td className={employeeStyles.table.td}>{req.employeeName}</td>
                 <td className={employeeStyles.table.td}>{req.type}</td>
@@ -110,6 +114,7 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} pageSize={pageSize} total={filteredRequests.length} onPageChange={setPage} />
       </div>
     </div>
   );

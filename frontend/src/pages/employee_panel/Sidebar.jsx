@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  IndianRupee,
+  MessageCircle,
 } from "lucide-react";
 import { employeeStyles } from "../../styles";
 
@@ -15,9 +17,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen, isCollapsed, setIsCollapsed }) => 
 
   const menuItems = [
     { path: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/employee/profile", label: "Profile Settings", icon: User },
     { path: "/employee/requests", label: "Apply Request", icon: FileText },
+    { path: "/employee/daily-salary", label: "Daily Salary", icon: IndianRupee },
     { path: "/employee/history", label: "My History", icon: History },
+    { path: "/employee/queries", label: "Contact HR", icon: MessageCircle },
+    { path: "/employee/profile", label: "Profile Settings", icon: User },
   ];
 
   return (

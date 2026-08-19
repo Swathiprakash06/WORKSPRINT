@@ -41,7 +41,6 @@ export const modalStyles = {
   checkboxText: 'text-sm text-[#1F1A2E]',
   label: 'block text-sm font-medium text-[#1F1A2E] mb-2',
   input: 'w-full px-4 py-2 border border-[#A0AEC0]/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all',
-  forgotPassword: 'text-sm text-[#7C3AED] hover:text-[#9B4DFF] transition-colors',
   footer: 'p-6 bg-[#F8F9FC] rounded-b-2xl flex flex-col items-center justify-center space-y-4',
   signInBtn: 'w-64 py-3 bg-gradient-to-r from-[#7C3AED] to-[#9B4DFF] text-white font-semibold rounded-lg hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 inline-flex items-center justify-center mx-auto',
   signUpText: 'text-center w-full',
@@ -362,7 +361,8 @@ export const employeeStyles = {
     statusBadge: (status) => `
       px-2 py-1 rounded-full text-xs font-medium inline-block
       ${status === 'present' ? 'bg-green-100 text-green-700' : 
-        status === 'late' ? 'bg-yellow-100 text-yellow-700' : 
+        status === 'late' ? 'bg-yellow-100 text-yellow-700' :
+        status === 'leave' ? 'bg-gray-100 text-gray-700' :
         'bg-red-100 text-red-700'}
     `,
   },
@@ -387,6 +387,7 @@ export const employeeStyles = {
         status === 'absent' ? 'bg-red-100 text-red-800 hover:bg-red-200':
         status === 'holiday' ? 'bg-purple-100 text-purple-800 hover:bg-purple-200' :
         status === 'late' ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' :
+        status === 'leave' ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' :
         'bg-blue-50 hover:bg-blue-100 text-gray-700'
       }
     `,
@@ -401,6 +402,7 @@ export const employeeStyles = {
       color === 'absent' ? 'bg-red-500' :
       color === 'late' ? 'bg-yellow-500' :
       color === 'holiday' ? 'bg-purple-500' :
+      color === 'leave' ? 'bg-gray-500' :
       'bg-blue-500'
     }`,
   },
@@ -491,7 +493,7 @@ export const employeeStyles = {
       ${isActive ? 'bg-white/20' : 'bg-gray-200'}
     `,
     name: 'font-medium text-sm',
-    role: 'text-xs opacity-75',
+    subtitle: 'text-xs opacity-75',
   },
   
   // Employee Detail Card Styles

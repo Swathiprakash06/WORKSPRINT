@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Download } from "lucide-react";
 import toast from "react-hot-toast";
 import { employeeStyles } from "../../styles";
-import { getLateDuration, formatDuration, getCurrentTime, getCurrentDate, isLate, formatTime, toLocalDateKey } from "../../utils/dateUtils";
+import { getLateDuration, formatDuration, getCurrentDate, getCurrentTime, isLate, formatTime, toLocalDateKey, formatDate } from "../../utils/dateUtils";
+import Pagination from '../../components/Pagination';
 
-const Dashboard = ({
+const Attendance = ({
   attendanceLogs = [],
+  requests = [],
   holidays = [],
   checkIn: externalCheckIn,
   checkOut: externalCheckOut,
@@ -14,12 +16,30 @@ const Dashboard = ({
   officeStart = "09:00",
   graceTime = 15,
   userId = "anonymous",
+  profileImage = null,
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [tableMonth, setTableMonth] = useState(getCurrentDate().slice(0, 7));
+  const [tablePage, setTablePage] = useState(1);
+  const tablePageSize = 10;
   const [attendanceModal, setAttendanceModal] = useState(null);
   const [modalReason, setModalReason] = useState("");
+  const approvedLeaveDates = new Set(
+    (requests || [])
+      .filter((request) => request.status === 'approved' && (request.type === 'Leave' || request.type === 'leave'))
+      .map((request) => toLocalDateKey(request.date))
+      .filter(Boolean)
+  );
 
-  const safeUserId = userId || "anonymous";
+  // Map to get leave request details by date
+  const approvedLeaveMap = new Map(
+    (requests || [])
+      .filter((request) => request.status === 'approved' && (request.type === 'Leave' || request.type === 'leave'))
+      .map((request) => [toLocalDateKey(request.date), request])
+  );
+
+  const safeUserId = String(userId ?? "anonymous");
+  const shortUserId = safeUserId.trim() || "anonymous";
   const todayStatusKey = `todayStatus_${safeUserId}`;
   const todayStatusDateKey = `todayStatusDate_${safeUserId}`;
 
@@ -54,7 +74,6 @@ const Dashboard = ({
 
     // Check if it's a weekend
     if (dayOfWeek === 0 || dayOfWeek === 6) return true;
-
     // Check if it's a holiday
     return holidays?.some(h => toLocalDateKey(h.date) === todayStr);
   };
@@ -86,25 +105,38 @@ const Dashboard = ({
       const currentTime = getCurrentTime();
       const todayDate = toLocalDateKey(new Date());
       
-      // If it's after working hours and user hasn't checked in
-      if (currentTime > workingHours.end && !todayStatus.checkedIn) {
+      // If it's after working hours and user hasn't checked in or marked absent
+      if (currentTime > workingHours.end && !todayStatus.checkedIn && todayStatus.status !== 'absent') {
         const existingLog = localAttendanceLogs.find(log => log.date === todayDate);
-        if (!existingLog) {
-          // Mark as absent
+        
+        // Only mark as absent if no record exists or existing record doesn't have check-in
+        if (!existingLog || (!existingLog.checkInTime && !existingLog.checkIn)) {
           const absentLog = {
             date: todayDate,
             status: "absent",
             checkInTime: null,
             checkOutTime: null,
-            markedAbsent: true,
+            markedAbsentManually: false,  // Auto-marked, not manual
             timestamp: new Date().toISOString()
           };
-          setLocalAttendanceLogs(prev => [...prev, absentLog]);
-          if (externalCheckIn) {
-            externalCheckIn(absentLog);
+          
+          if (existingLog) {
+            // Update existing log to absent
+            const updatedLog = { ...existingLog, ...absentLog };
+            setLocalAttendanceLogs(prev => prev.map(log => log.date === todayDate ? updatedLog : log));
+            if (externalCheckIn) {
+              externalCheckIn(updatedLog);
+            }
+          } else {
+            // Create new absent log
+            setLocalAttendanceLogs(prev => [...prev, absentLog]);
+            if (externalCheckIn) {
+              externalCheckIn(absentLog);
+            }
           }
+          
           setTodayStatus(prev => ({ ...prev, status: "absent" }));
-          toast.error(`Marked absent for ${todayDate} - No check-in recorded`);
+          toast.error(`Auto-marked absent for ${todayDate} - No check-in recorded after working hours`);
         }
       }
     };
@@ -114,7 +146,7 @@ const Dashboard = ({
     checkEndOfDay(); // Initial check
     
     return () => clearInterval(interval);
-  }, [todayStatus.checkedIn, localAttendanceLogs, workingHours.end, externalCheckIn]);
+  }, [todayStatus.checkedIn, todayStatus.status, localAttendanceLogs, workingHours.end, externalCheckIn]);
 
   // Load today's status from existing logs on component mount and when logs change
   useEffect(() => {
@@ -353,6 +385,57 @@ const Dashboard = ({
       });
   };
 
+  // Handle marking today as absent
+  const handleMarkAbsent = () => {
+    const todayDate = toLocalDateKey(new Date());
+    
+    // Can't mark if outside working hours
+    if (!isWithinWorkingHours()) {
+      toast.error(`You can only mark absent between ${formatTime(workingHours.start)} and ${formatTime(workingHours.end)}`);
+      return;
+    }
+    
+    // Can't mark approved leaves as absent
+    if (approvedLeaveDates.has(todayDate)) {
+      toast.error("This is an approved leave. Cannot mark as absent");
+      return;
+    }
+
+    // Check if already has check-in record
+    const existingLog = localAttendanceLogs.find(log => log.date === todayDate);
+    if (existingLog && (existingLog.checkInTime || existingLog.checkIn)) {
+      toast.error("Cannot mark as absent. You have already checked in today");
+      return;
+    }
+
+    const absentLog = {
+      date: todayDate,
+      status: "absent",
+      checkInTime: null,
+      checkOutTime: null,
+      markedAbsentManually: true,  // Flag to distinguish manual vs auto-mark
+      timestamp: new Date().toISOString()
+    };
+
+    // Update local logs
+    const existingLogIndex = localAttendanceLogs.findIndex(log => log.date === todayDate);
+    let updatedLogs;
+    if (existingLogIndex >= 0) {
+      updatedLogs = [...localAttendanceLogs];
+      updatedLogs[existingLogIndex] = absentLog;
+    } else {
+      updatedLogs = [...localAttendanceLogs, absentLog];
+    }
+    
+    setLocalAttendanceLogs(updatedLogs);
+    if (externalCheckIn) {
+      externalCheckIn(absentLog);
+    }
+    
+    setTodayStatus(prev => ({ ...prev, status: "absent" }));
+    toast.success(`Marked today as absent`);
+  };
+
   // Get status color with today's actual status
   const getStatusColor = (date, attendanceLogs = []) => {
     const dateStr = toLocalDateKey(date);
@@ -361,6 +444,9 @@ const Dashboard = ({
     // Dynamic holidays from backend (any date)
     const holiday = holidays?.find(h => toLocalDateKey(h.date) === dateStr);
     if (holiday) return "holiday";
+
+    // Check for approved leave (any date)
+    if (approvedLeaveDates.has(dateStr)) return "leave";
 
     // If date is today, show real-time status or default until marked absent at EOD.
     if (dateStr === todayDate) {
@@ -436,7 +522,7 @@ const Dashboard = ({
   };
 
   // Render cell content based on status
-  const renderCellContent = (status, dayData, holidayData) => {
+  const renderCellContent = (status, dayData, holidayData, dateStr) => {
     if (holidayData) {
       return (
         <div className={employeeStyles.calendar.dayCellStatus}>
@@ -464,7 +550,9 @@ const Dashboard = ({
         );
 
       case 'late': {
-        const lateDuration = dayData ? getLateDuration(dayData.checkInTime || dayData.checkIn) : 0;
+        const lateDuration = dayData
+          ? getLateDuration(dayData.checkInTime || dayData.checkIn, officeStart, graceTime)
+          : 0;
         return (
           <div>
             <div className={employeeStyles.calendar.dayCellStatus}>Late</div>
@@ -482,6 +570,20 @@ const Dashboard = ({
         );
       }
 
+      case 'leave': {
+        const leaveData = approvedLeaveMap.get(dateStr);
+        return (
+          <div>
+            <div className={employeeStyles.calendar.dayCellStatus}>Approved</div>
+            {leaveData?.reason && (
+              <div className={employeeStyles.calendar.dayCellTime}>
+                {leaveData.reason.length > 20 ? leaveData.reason.substring(0, 20) + '...' : leaveData.reason}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       case 'absent':
         return (
           <div className={employeeStyles.calendar.dayCellStatus}>
@@ -490,7 +592,32 @@ const Dashboard = ({
         );
 
       default:
-        return null; // Just show the date
+        return null;
+    }
+  };
+
+  const exportTableData = async () => {
+    try {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'}/api/v1/employee/attendance/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error('Export failed');
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'employee-attendance-export.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Attendance export downloaded');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export attendance report');
     }
   };
 
@@ -500,6 +627,39 @@ const Dashboard = ({
     "July", "August", "September", "October", "November", "December"
   ];
 
+  const tableRows = [...attendanceLogs]
+    .map((log) => {
+      const date = toLocalDateKey(log.date);
+      const approvedLeave = approvedLeaveDates.has(date);
+      return {
+        date,
+        status: approvedLeave ? 'Approved Leave' : (log.status || 'Absent'),
+        checkIn: formatTime(log.checkInTime || log.checkIn) || '-',
+        checkOut: formatTime(log.checkOutTime || log.checkOut) || '-',
+        hours: log.totalHours ?? '-',
+        note: approvedLeave ? 'Approved leave' : (log.lateReason || log.earlyCheckoutReason || log.hrNote || '-'),
+      };
+    })
+    .concat(
+      [...approvedLeaveDates]
+        .filter((date) => !attendanceLogs.some((log) => toLocalDateKey(log.date) === date))
+        .map((date) => ({
+          date,
+          status: 'Approved Leave',
+          checkIn: '-',
+          checkOut: '-',
+          hours: '-',
+          note: 'Approved leave',
+        }))
+    )
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((row) => row.date.startsWith(tableMonth));
+  const pagedTableRows = tableRows.slice((tablePage - 1) * tablePageSize, tablePage * tablePageSize);
+
+  const normalizedProfileImage = profileImage
+    ? (profileImage.startsWith('http') ? profileImage : `http://localhost:3001/${profileImage.replace(/\\/g, '/')}`)
+    : null;
+
   return (
     <div className={employeeStyles.dashboard.container}>
       
@@ -508,28 +668,63 @@ const Dashboard = ({
         <h1 className={employeeStyles.dashboard.title}>Dashboard</h1>
 
         <div className={employeeStyles.dashboard.statusButtons}>
-          <button
-            onClick={handleCheckIn}
-            className={employeeStyles.dashboard.checkInBtn}
-            disabled={todayStatus.checkedIn || isHolidayOrWeekend()}
-            style={(todayStatus.checkedIn || isHolidayOrWeekend()) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-          >
-            {getCheckInButtonText()} {todayStatus.checkInTime && `(${formatTime(todayStatus.checkInTime)})`}
-          </button>
+          {/* Button Logic based on attendance state */}
+          {(() => {
+            const isApprovedLeave = approvedLeaveDates.has(toLocalDateKey(new Date()));
+            const isHolidayOrWeekendToday = isHolidayOrWeekend();
+            const withinWorkingHours = isWithinWorkingHours();
+            
+            // Check if MANUALLY marked absent (not auto-marked at end of day)
+            const todayLog = localAttendanceLogs.find(log => log.date === toLocalDateKey(new Date()));
+            const manuallyMarkedAbsent = todayLog?.markedAbsentManually === true;
+            
+            // Button states:
+            // If checked in → can only check out
+            const checkInDisabled = todayStatus.checkedIn || isHolidayOrWeekendToday || isApprovedLeave || manuallyMarkedAbsent || !withinWorkingHours;
+            const checkOutDisabled = !todayStatus.checkedIn || todayStatus.checkedOut || isHolidayOrWeekendToday || isApprovedLeave || manuallyMarkedAbsent || !withinWorkingHours;
+            
+            // If not checked in → can mark absent
+            const markAbsentDisabled = todayStatus.checkedIn || isHolidayOrWeekendToday || isApprovedLeave || manuallyMarkedAbsent || !withinWorkingHours;
 
-          <button
-            onClick={handleCheckOut}
-            className={employeeStyles.dashboard.checkOutBtn}
-            disabled={!todayStatus.checkedIn || todayStatus.checkedOut || isHolidayOrWeekend()}
-            style={(!todayStatus.checkedIn || todayStatus.checkedOut || isHolidayOrWeekend()) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-          >
-            {getCheckOutButtonText()} {todayStatus.checkOutTime && `(${formatTime(todayStatus.checkOutTime)})`}
-          </button>
+            return (
+              <>
+                <button
+                  onClick={handleCheckIn}
+                  className={employeeStyles.dashboard.checkInBtn}
+                  disabled={checkInDisabled}
+                  style={checkInDisabled ? { backgroundColor: '#9CA3AF', color: 'white', opacity: 0.7, cursor: 'not-allowed', borderColor: '#9CA3AF' } : {}}
+                  title={!withinWorkingHours ? `Only available between ${workingHours.start} - ${workingHours.end}` : manuallyMarkedAbsent ? "Already marked as absent" : isApprovedLeave ? "On approved leave" : todayStatus.checkedIn ? "Already checked in" : ""}
+                >
+                  {getCheckInButtonText()} {todayStatus.checkInTime && `(${formatTime(todayStatus.checkInTime)})`}
+                </button>
+
+                <button
+                  onClick={handleCheckOut}
+                  className={employeeStyles.dashboard.checkOutBtn}
+                  disabled={checkOutDisabled}
+                  style={checkOutDisabled ? { backgroundColor: '#9CA3AF', color: 'white', opacity: 0.7, cursor: 'not-allowed', borderColor: '#9CA3AF' } : {}}
+                  title={!withinWorkingHours ? `Only available between ${workingHours.start} - ${workingHours.end}` : !todayStatus.checkedIn ? "Check in first" : manuallyMarkedAbsent ? "Already marked as absent" : isApprovedLeave ? "On approved leave" : ""}
+                >
+                  {getCheckOutButtonText()} {todayStatus.checkOutTime && `(${formatTime(todayStatus.checkOutTime)})`}
+                </button>
+
+                <button
+                  onClick={handleMarkAbsent}
+                  className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={markAbsentDisabled}
+                  style={markAbsentDisabled ? { backgroundColor: '#9CA3AF', opacity: 0.7, cursor: 'not-allowed' } : {}}
+                  title={!withinWorkingHours ? `Only available between ${workingHours.start} - ${workingHours.end}` : todayStatus.checkedIn ? "Cannot mark absent after check-in" : manuallyMarkedAbsent ? "Already marked as absent" : isApprovedLeave ? "On approved leave" : ""}
+                >
+                  Mark Absent
+                </button>
+              </>
+            );
+          })()}
 
           <div className={employeeStyles.dashboard.statusBadge(currentStatus)}>
             <Clock size={14} className="inline mr-1" />
             Current Status:{" "}
-            {todayStatus.checkedIn ? (todayStatus.status === "present" ? "Present" : "Late") : "Absent"}
+            {approvedLeaveDates.has(toLocalDateKey(new Date())) ? 'Approved Leave' : todayStatus.checkedIn ? (todayStatus.status === 'present' ? 'Present' : 'Late') : 'Absent'}
           </div>
         </div>
       </div>
@@ -609,6 +804,7 @@ const Dashboard = ({
 return <div key={idx} className="h-[3rem] sm:h-[3.5rem] md:h-[4rem]"></div>;
             }
 
+            const dateStr = toLocalDateKey(day);
             const status = getStatusColor(day, localAttendanceLogs);
             const isToday = day.toDateString() === new Date().toDateString();
             const dayData = getDayData(day, localAttendanceLogs);
@@ -630,7 +826,7 @@ return <div key={idx} className="h-[3rem] sm:h-[3.5rem] md:h-[4rem]"></div>;
                   <div className={employeeStyles.calendar.dayCellDate}>
                     {day.getDate()}
                   </div>
-                  {renderCellContent(status, dayData, holidayData)}
+                  {renderCellContent(status, dayData, holidayData, dateStr)}
                 </div>
               </div>
             );
@@ -655,7 +851,88 @@ return <div key={idx} className="h-[3rem] sm:h-[3.5rem] md:h-[4rem]"></div>;
             <span className={employeeStyles.calendar.legendColor("holiday")}></span>
             Holiday
           </span>
+          <span className={employeeStyles.calendar.legendItem}>
+            <span className={employeeStyles.calendar.legendColor("leave")}></span>
+            Approved Leave
+          </span>
         </div>
+      </div>
+
+      {normalizedProfileImage && (
+        <div className="mt-6 flex justify-center">
+          <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+            <img
+              src={normalizedProfileImage}
+              alt="Employee profile"
+              className="h-40 w-40 rounded-xl object-cover border border-gray-200 bg-gray-100"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">My Attendance</h2>
+            <p className="text-sm text-gray-500">Track your daily attendance and approved leave records.</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="attendance-month" className="text-sm font-medium text-gray-900">Month</label>
+              <input
+                id="attendance-month"
+                type="month"
+                value={tableMonth}
+                onChange={(e) => setTableMonth(e.target.value)}
+                className="h-10 rounded-lg border border-gray-300 px-3 text-sm text-gray-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={exportTableData}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-green-600 px-3 text-sm font-medium text-white hover:bg-green-700"
+            >
+              <Download size={16} />
+              Export Excel
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-gray-700">
+                <th className="px-3 py-2 font-semibold">Date</th>
+                <th className="px-3 py-2 font-semibold">Status</th>
+                <th className="px-3 py-2 font-semibold">Check-in</th>
+                <th className="px-3 py-2 font-semibold">Check-out</th>
+                <th className="px-3 py-2 font-semibold">Hours</th>
+                <th className="px-3 py-2 font-semibold">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedTableRows.length > 0 ? pagedTableRows.map((row, index) => (
+                <tr key={`${row.date}-${index}`} className="border-t border-gray-100">
+                  <td className="px-3 py-2 text-gray-800">{formatDate(row.date)}</td>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.status === 'Present' ? 'bg-green-100 text-green-700' : row.status === 'Late' ? 'bg-yellow-100 text-yellow-700' : row.status === 'Approved Leave' ? 'bg-gray-200 text-gray-700' : 'bg-red-100 text-red-700'}`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-gray-700">{row.checkIn}</td>
+                  <td className="px-3 py-2 text-gray-700">{row.checkOut}</td>
+                  <td className="px-3 py-2 text-gray-700">{row.hours === '-' ? '—' : `${row.hours}h`}</td>
+                  <td className="px-3 py-2 text-gray-700">{row.note}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="6" className="px-3 py-4 text-center text-gray-400">No attendance records found</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <Pagination page={tablePage} pageSize={tablePageSize} total={tableRows.length} onPageChange={setTablePage} />
       </div>
 
       {attendanceModal && (
@@ -705,4 +982,4 @@ return <div key={idx} className="h-[3rem] sm:h-[3.5rem] md:h-[4rem]"></div>;
   );
 };
 
-export default Dashboard;
+export default Attendance;

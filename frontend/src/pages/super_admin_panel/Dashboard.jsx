@@ -2,16 +2,20 @@
 import React from 'react';
 import { Mail, CheckCircle, XCircle, Building2, TrendingUp, Users } from 'lucide-react';
 import { employeeStyles } from '../../styles';
+import { useState } from 'react';
+import Pagination from '../../components/Pagination';
 
 const Dashboard = ({ enquiries, organizations }) => {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const totalEnquiries = enquiries.length;
   const acceptedEnquiries = enquiries.filter(e => e.status === 'accepted').length;
   const rejectedEnquiries = enquiries.filter(e => e.status === 'rejected').length;
   const totalOrganizations = organizations.length;
   
   const recentEnquiries = [...enquiries]
-    .sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate))
-    .slice(0, 5);
+    .sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+  const pagedEnquiries = recentEnquiries.slice((page - 1) * pageSize, page * pageSize);
 
   const cards = [
     { 
@@ -92,7 +96,7 @@ const Dashboard = ({ enquiries, organizations }) => {
             </thead>
             <tbody>
               {recentEnquiries.length > 0 ? (
-                recentEnquiries.map(enquiry => (
+                pagedEnquiries.map(enquiry => (
                   <tr key={enquiry.id}>
                     <td className={employeeStyles.superAdminDashboard.td}>{enquiry.companyName}</td>
                     <td className={employeeStyles.superAdminDashboard.td}>{enquiry.hrName}</td>
@@ -114,6 +118,7 @@ const Dashboard = ({ enquiries, organizations }) => {
               )}
             </tbody>
           </table>
+          <Pagination page={page} pageSize={pageSize} total={recentEnquiries.length} onPageChange={setPage} />
         </div>
       </div>
     </div>

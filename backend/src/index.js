@@ -13,7 +13,7 @@ const hrAdminRoutes = require('./routes/hrAdminRoutes');
 const employeeRoutes = require('./routes/employeeRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3001;
 app.set("trust proxy", 1);
 app.use(cors({
   origin: '*',
@@ -39,7 +39,7 @@ const apiLimiter = rateLimit({
 });
 app.use('/api', apiLimiter);
 
-app.get('/', (req, res) => res.json({ message: 'WORKSPRINT Backend API' }));
+app.get('/', (req, res) => res.json({ message: 'WORKMATE Backend API' }));
 
 // Explicit OPTIONS handler for all routes
 app.options('*', cors({
@@ -59,7 +59,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
-  console.log(`WORKSPRINT backend started on ${PORT}`);
+  console.log(`WORKMATE backend started on ${PORT}`);
   
   // Seed super admin if not exists
   try {

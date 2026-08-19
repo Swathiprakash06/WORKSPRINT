@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-import Dashboard from './Dashboard';
+import Attendance from './Attendance';
 import ApplyRequest from './ApplyRequest';
 import MyHistory from './MyHistory';
+import MyDailySalary from './MyDailySalary';
+import MyQueries from './MyQueries';
 import ProfileSettings from '../../components/ProfileSettings';
 import LogoutConfirmation from '../../components/LogoutConfirmation';
 import { AuthProvider } from './EmployeeAuthContext';
@@ -173,6 +175,32 @@ const EmployeePanel = ({
 
   const updateAttendance = async (newAttendance) => {
     try {
+      if (newAttendance.status === 'absent') {
+        const res = await apiPost('/api/v1/employee/attendance/mark-absent', {
+          date: newAttendance.date,
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || 'Failed to mark absent');
+        }
+
+        const saved = await res.json();
+        const formatted = {
+          ...saved,
+          date: toLocalDateKey(saved.date),
+          checkInTime: null,
+          checkOutTime: null,
+          totalHours: 0,
+        };
+        setAttendanceLogs((prev) => [
+          ...prev.filter((row) => row.date !== formatted.date),
+          formatted,
+        ]);
+        await loadData();
+        return;
+      }
+
       if (newAttendance.checkedIn && !newAttendance.checkedOut) {
         const geo = await new Promise((resolve, reject) => {
           if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
@@ -214,6 +242,7 @@ const EmployeePanel = ({
           lateReason: saved.lateReason || null,
         };
         setAttendanceLogs(prev => [...prev.filter((row) => row.date !== formatted.date), formatted]);
+        await loadData();
         return;
       }
 
@@ -252,13 +281,14 @@ const EmployeePanel = ({
         }
 
         const saved = await res.json();
+        const attendance = saved.attendance || saved;
         const formatted = {
-          ...saved,
-          date: toLocalDateKey(saved.date),
-          checkInTime: saved.checkInTime || saved.checkIn || null,
-          checkOutTime: saved.checkOutTime || saved.checkOut || null,
-          lateReason: saved.lateReason || null,
-          earlyCheckoutReason: saved.earlyCheckoutReason || null,
+          ...attendance,
+          date: toLocalDateKey(attendance.date),
+          checkInTime: attendance.checkInTime || attendance.checkIn || null,
+          checkOutTime: attendance.checkOutTime || attendance.checkOut || null,
+          lateReason: attendance.lateReason || null,
+          earlyCheckoutReason: attendance.earlyCheckoutReason || null,
         };
         setAttendanceLogs((prev) => {
           const matched = prev.some(
@@ -273,6 +303,15 @@ const EmployeePanel = ({
               : row
           );
         });
+
+        if (saved.salary) {
+          if (saved.salary.credited) {
+            toast.success(saved.salary.notification?.message || `₹${saved.salary.amount} salary credited for today`);
+          } else if (saved.salary.notification) {
+            toast(saved.salary.notification.message, { icon: '⚠️' });
+          }
+        }
+        await loadData();
         return;
       }
     } catch (err) {
@@ -332,8 +371,9 @@ const EmployeePanel = ({
               <Route 
                 path="dashboard" 
                 element={
-                  <Dashboard 
+                  <Attendance 
                     attendanceLogs={attendanceLogs}
+                    requests={requests}
                     holidays={holidays}
                     checkIn={updateAttendance}
                     checkOut={updateAttendance}
@@ -342,6 +382,7 @@ const EmployeePanel = ({
                     officeStart={settings.officeStart || '09:00'}
                     graceTime={settings.graceTime ?? 15}
                     userId={currentUser.id}
+                    profileImage={currentUser.profilePic}
                   />
                 } 
               />
@@ -358,6 +399,8 @@ const EmployeePanel = ({
                   />
                 } 
               />
+              <Route path="daily-salary" element={<MyDailySalary />} />
+              <Route path="queries" element={<MyQueries />} />
               <Route path="profile" element={<ProfileSettings role="employee" />} />
             </Routes>
           </div>

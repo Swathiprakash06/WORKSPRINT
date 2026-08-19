@@ -14,7 +14,7 @@ const Features = () => {
       title: "Organization & Access",
       points: [
         "Custom org login URLs",
-        "Role-based permissions",
+        "Secure access controls",
         "Personal dashboards",
         "API-based onboarding"
       ]
@@ -69,7 +69,7 @@ const Features = () => {
       title: "Employee Data Management",
       points: [
         "Centralized employee profiles",
-        "Employment history & role tracking",
+        "Employment history tracking",
         "Performance and appraisal records",
         "Secure data storage with controlled access"
       ]
@@ -111,10 +111,10 @@ const Features = () => {
       <div className={featuresStyles.container}>
         <div className={featuresStyles.whySection}>
           <div className={featuresStyles.whyContent}>
-            <h2 className={featuresStyles.whyTitle}>Why WorkSprint?</h2>
+            <h2 className={featuresStyles.whyTitle}>Why Workmate?</h2>
             <p className={featuresStyles.whyDescription}>
               Managing people, payroll, and compliance shouldn't slow your business down. 
-              WorkSprint is built to automate routine HR operations, reduce errors, and ensure 
+              Workmate is built to automate routine HR operations, reduce errors, and ensure 
               statutory compliance—so HR teams can focus on people, not paperwork.
             </p>
           </div>

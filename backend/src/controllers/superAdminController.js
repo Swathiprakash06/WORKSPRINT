@@ -106,9 +106,42 @@ const getOrganization = catchAsync(async (req, res) => {
 });
 
 const updateOrganization = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const payload = req.body;
-  const updated = await prisma.organization.update({ where: { id: Number(id) }, data: payload });
+  const organizationId = Number(req.params.id);
+  const { companyName, hrName, email, phone, employeeLimit } = req.body;
+  const existing = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    include: { hrAdmins: { orderBy: { id: 'asc' }, take: 1 } },
+  });
+  if (!existing) throw new AppError('Organization not found', 404);
+
+  const organizationData = {};
+  if (companyName !== undefined) organizationData.companyName = String(companyName).trim();
+  if (hrName !== undefined) organizationData.hrName = String(hrName).trim();
+  if (email !== undefined) organizationData.email = String(email).trim();
+  if (phone !== undefined) organizationData.phone = phone ? String(phone).trim() : null;
+  if (employeeLimit !== undefined) {
+    const limit = Number(employeeLimit);
+    if (!Number.isInteger(limit) || limit < existing.currentEmployees) {
+      throw new AppError('Employee limit must be a whole number greater than or equal to current usage', 400);
+    }
+    organizationData.employeeLimit = limit;
+  }
+
+  const primaryHrAdmin = existing.hrAdmins[0];
+  const hrAdminData = {};
+  if (hrName !== undefined) hrAdminData.name = String(hrName).trim();
+  if (email !== undefined) hrAdminData.email = String(email).trim();
+
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.organization.update({ where: { id: organizationId }, data: organizationData });
+    if (primaryHrAdmin && Object.keys(hrAdminData).length > 0) {
+      await tx.hrAdmin.update({ where: { id: primaryHrAdmin.id }, data: hrAdminData });
+    }
+    return tx.organization.findUnique({
+      where: { id: organizationId },
+      include: { hrAdmins: true, employees: true },
+    });
+  });
   res.json(updated);
 });
 
@@ -157,11 +190,10 @@ const createHrAdmin = catchAsync(async (req, res) => {
       name,
       email,
       password,
-      role: 'hr_admin',
       designation: 'HR Administrator',
       department: 'Human Resources',
       phone: null,
-    }, 'super_admin');
+    });
 
     if (!emailResult.success) {
       console.error('Failed to send HR admin welcome email:', emailResult.error);
@@ -190,7 +222,7 @@ const resetHrAdminPassword = catchAsync(async (req, res) => {
   const { id } = req.params;
   const { password } = req.body;
   const hashed = await bcrypt.hash(password, 10);
-  const role = await prisma.hrAdmin.update({ where: { id: Number(id) }, data: { password: hashed } });
+  const updatedAdmin = await prisma.hrAdmin.update({ where: { id: Number(id) }, data: { password: hashed } });
 
   const admin = await prisma.hrAdmin.findUnique({ where: { id: Number(id) } });
   if (admin) {
@@ -198,14 +230,49 @@ const resetHrAdminPassword = catchAsync(async (req, res) => {
       name: admin.name,
       email: admin.email,
       password,
-      role: 'hr_admin',
       designation: 'HR Administrator',
       department: 'Human Resources',
       phone: admin.phone,
-    }, 'super_admin');
+    });
   }
 
-  res.json({ message: 'Password reset successfully', hrAdmin: role });
+  res.json({ message: 'Password reset successfully', hrAdmin: updatedAdmin });
+});
+
+const listAdminQueries = catchAsync(async (req, res) => {
+  const queries = await prisma.adminQuery.findMany({
+    include: { hrAdmin: { select: { id: true, name: true, email: true } }, organization: { select: { id: true, companyName: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(queries);
+});
+
+const createAdminQuery = catchAsync(async (req, res) => {
+  const subject = String(req.body.subject ?? '').trim();
+  const message = String(req.body.message ?? '').trim();
+  const hrAdminId = Number(req.body.hrAdminId);
+  if (!subject || !message || !hrAdminId) throw new AppError('HR admin, subject, and message are required', 400);
+
+  const hrAdmin = await prisma.hrAdmin.findUnique({ where: { id: hrAdminId }, select: { id: true, organizationId: true } });
+  if (!hrAdmin) throw new AppError('HR admin not found', 404);
+  const query = await prisma.adminQuery.create({
+    data: { organizationId: hrAdmin.organizationId, hrAdminId, senderRole: 'superAdmin', subject, message },
+    include: { hrAdmin: { select: { id: true, name: true, email: true } }, organization: { select: { id: true, companyName: true } } },
+  });
+  res.status(201).json(query);
+});
+
+const respondToAdminQuery = catchAsync(async (req, res) => {
+  const response = String(req.body.response ?? '').trim();
+  if (!response) throw new AppError('Response is required', 400);
+  const query = await prisma.adminQuery.findUnique({ where: { id: Number(req.params.id) } });
+  if (!query) throw new AppError('Admin query not found', 404);
+  const updated = await prisma.adminQuery.update({
+    where: { id: query.id },
+    data: { response, status: req.body.status === 'closed' ? 'closed' : 'answered', respondedByRole: 'superAdmin', respondedById: req.user.id, respondedAt: new Date() },
+    include: { hrAdmin: { select: { id: true, name: true, email: true } }, organization: { select: { id: true, companyName: true } } },
+  });
+  res.json(updated);
 });
 
 module.exports = {
@@ -223,6 +290,9 @@ module.exports = {
   listHrAdmins,
   updateHrAdmin,
   resetHrAdminPassword,
+  listAdminQueries,
+  createAdminQuery,
+  respondToAdminQuery,
   getProfile,
   updateProfile,
   uploadProfilePicture,

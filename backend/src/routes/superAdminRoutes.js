@@ -35,5 +35,8 @@ router.post('/hr-admins', [
 router.get('/hr-admins', controller.listHrAdmins);
 router.put('/hr-admins/:id', controller.updateHrAdmin);
 router.post('/hr-admins/:id/reset-password', [body('password').isLength({ min: 6 })], validateRequest, controller.resetHrAdminPassword);
+router.get('/admin-queries', controller.listAdminQueries);
+router.post('/admin-queries', [body('hrAdminId').isInt(), body('subject').notEmpty(), body('message').notEmpty()], validateRequest, controller.createAdminQuery);
+router.put('/admin-queries/:id/respond', [body('response').notEmpty()], validateRequest, controller.respondToAdminQuery);
 
 module.exports = router;

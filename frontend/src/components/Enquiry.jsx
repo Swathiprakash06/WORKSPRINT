@@ -108,7 +108,7 @@ const Enquiry = () => {
             <h1 className={enquiryStyles.title}>
               Get Started with{' '}
               <span className={enquiryStyles.titleHighlight}>
-                Worksprint
+                Workmate
               </span>
             </h1>
             <p className={enquiryStyles.subtitle}>
@@ -225,7 +225,7 @@ const Enquiry = () => {
                 <div className={modalStyles.signUpText}>
                   <span className="text-sm text-[#A0AEC0]">Already onboarded? </span>
                   <Link to="/login" className={modalStyles.signUpLink}>
-                     Sign in to your WorkSprint account
+                     Sign in to your Workmate account
                   </Link>
                 </div>
               </form>

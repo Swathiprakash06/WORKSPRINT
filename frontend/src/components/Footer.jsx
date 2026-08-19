@@ -25,7 +25,7 @@ const Footer = () => {
         <div className={footerStyles.grid}>
           <div className={footerStyles.logoColumn}>
             <div className={footerStyles.logo}>
-              WORKSPRINT
+              WORKMATE
             </div>
             <p className={footerStyles.tagline}>
               Powering modern HR operations with automation, compliance, and scalable workflows.
@@ -92,7 +92,7 @@ const Footer = () => {
         {/* Footer Bottom */}
         <div className={footerStyles.footerBottom}>
           <p className={footerStyles.copyright}>
-            © {new Date().getFullYear()} WorkSprint. All rights reserved.
+            © {new Date().getFullYear()} Workmate. All rights reserved.
           </p>
         </div>
       </div>

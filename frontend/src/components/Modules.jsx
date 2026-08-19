@@ -67,7 +67,7 @@ const Modules = () => {
             </p>
           </div>
           <p className={modulesStyles.pricingDescription}>
-            WorkSprint follows a flexible subscription model — activate modules anytime as your business scales.
+            Workmate follows a flexible subscription model — activate modules anytime as your business scales.
           </p>
         </div>
       </div>

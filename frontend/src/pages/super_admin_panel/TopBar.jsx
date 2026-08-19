@@ -10,7 +10,7 @@ const TopBar = ({ superAdminName, onLogout, onMenuClick }) => {
         <Menu size={22} />
       </button>
       <div className={employeeStyles.topbar.logo}>
-        WORKSPRINT DASHBOARD
+        WORKMATE DASHBOARD
       </div>
       <div className={employeeStyles.topbar.rightSection}>
         <div className={employeeStyles.topbar.userInfo}>

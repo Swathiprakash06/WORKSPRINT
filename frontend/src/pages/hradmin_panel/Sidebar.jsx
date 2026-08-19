@@ -4,14 +4,16 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   User,
-  UserPlus,
   Users,
   Settings,
   CalendarDays,
   MapPin,
   Clock,
+  IndianRupee,
   FileText,
   History,
+  MessageCircle,
+  MessageSquareWarning,
   ChevronLeft,
   ChevronRight,
   X,
@@ -20,15 +22,17 @@ import { employeeStyles } from '../../styles';
 const Sidebar = ({ mobileOpen, setMobileOpen, isCollapsed, setIsCollapsed }) => {
   const menuItems = [
     { path: "/hradmin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/hradmin/profile", label: "Profile Settings", icon: User },
-    { path: "/hradmin/onboarding", label: "Employee Onboarding", icon: UserPlus },
     { path: "/hradmin/employee-list", label: "Employee List", icon: Users },
     { path: "/hradmin/attendance-settings", label: "Attendance Settings", icon: Settings },
     { path: "/hradmin/holiday-management", label: "Holiday Management", icon: CalendarDays },
     { path: "/hradmin/location-restriction", label: "Location Restriction", icon: MapPin },
     { path: "/hradmin/attendance-monitoring", label: "Attendance Monitoring", icon: Clock },
+    { path: "/hradmin/monthly-salary-summary", label: "Payroll Summary", icon: IndianRupee },
     { path: "/hradmin/requests-management", label: "Requests Management", icon: FileText },
+    { path: "/hradmin/employee-queries", label: "Employee Queries", icon: MessageCircle },
+    { path: "/hradmin/super-admin-queries", label: "Contact Super Admin", icon: MessageSquareWarning },
     { path: "/hradmin/employee-history", label: "Employee History", icon: History },
+    { path: "/hradmin/profile", label: "Profile Settings", icon: User },
   ];
 
   return (

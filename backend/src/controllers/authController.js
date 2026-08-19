@@ -22,19 +22,19 @@ const getUserByEmail = async (email) => {
 
 const login = async (req, res, next) => {
   const { email, password } = req.body;
-  console.log('🔐 LOGIN ATTEMPT:', { email, password: password ? '[PROVIDED]' : '[MISSING]' });
+  console.log('LOGIN ATTEMPT:', { email, password: password ? '[PROVIDED]' : '[MISSING]' });
   
   const user = await getUserByEmail(email);
   if (!user) { 
-    console.log('❌ User not found:', email);
+    console.log(' User not found:', email);
     return next(new AppError('Invalid credentials', 401)); 
   }
 
-  console.log('✅ User found:', { id: user.id, role: user.role });
+  console.log('User found:', { id: user.id, role: user.role });
 
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) { 
-    console.log('❌ Invalid password for user:', email);
+    console.log(' Invalid password for user:', email);
     return next(new AppError('Invalid credentials', 401)); 
   }
 
@@ -78,8 +78,22 @@ const refreshToken = async (req, res, next) => {
     return next(new AppError('Invalid refresh token', 401));
   }
 
-  const newAccessToken = signAccessToken({ id: payload.id, role: payload.role, email: payload.email });
-  const newRefreshToken = signRefreshToken({ id: payload.id, role: payload.role, email: payload.email });
+  // Resolve the current user from the database instead of relying on an old
+  // refresh-token payload. Earlier refreshes omitted organizationId, which
+  // caused organization-scoped HR endpoints to fail after token renewal.
+  const user = await getUserByEmail(payload.email);
+  if (!user || user.id !== payload.id) {
+    return next(new AppError('Invalid refresh token', 401));
+  }
+
+  const refreshedPayload = {
+    id: user.id,
+    role: user.role,
+    email: user.email,
+    organizationId: user.organizationId || null,
+  };
+  const newAccessToken = signAccessToken(refreshedPayload);
+  const newRefreshToken = signRefreshToken(refreshedPayload);
 
   await prisma.refreshToken.update({
     where: { userEmail: payload.email },
@@ -125,7 +139,7 @@ const forgotPassword = async (req, res, next) => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}&email=${email}`;
   await sendMail({
     to: email,
-    subject: 'WORKSPRINT Password Reset',
+    subject: 'WORKMATE Password Reset',
     html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
   });
 

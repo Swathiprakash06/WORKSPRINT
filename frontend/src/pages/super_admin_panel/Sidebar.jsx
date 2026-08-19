@@ -1,25 +1,17 @@
 // pages/super_admin_panel/Sidebar.jsx
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  User,
-  Mail,
-  Building2,
-  UserPlus,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from 'lucide-react';
+import {LayoutDashboard,User,Mail,Building2,UserPlus,MessageCircle,ChevronLeft,ChevronRight,X,} from 'lucide-react';
 import { employeeStyles } from '../../styles';
 
 const Sidebar = ({ mobileOpen, setMobileOpen, isCollapsed, setIsCollapsed }) => {
   const menuItems = [
     { path: "/super-admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { path: "/super-admin/profile", label: "Profile Settings", icon: User },
     { path: "/super-admin/enquiry-management", label: "Enquiry Management", icon: Mail },
     { path: "/super-admin/organization-list", label: "Organization List", icon: Building2 },
     { path: "/super-admin/create-hr-admin", label: "Create HR Admin", icon: UserPlus },
+    { path: "/super-admin/hr-communications", label: "HR Communications", icon: MessageCircle },
+    { path: "/super-admin/profile", label: "Profile Settings", icon: User },
   ];
 
   return (

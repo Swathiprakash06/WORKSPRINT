@@ -12,7 +12,7 @@ const markAbsentAfterHours = async () => {
 
   await Promise.all(employees.map(async (employee) => {
     const existing = await prisma.attendance.findUnique({
-      where: { employeeId_date: { employeeId: employee.id, date: startOfDay } },
+      where: { employeeId_date_isTest: { employeeId: employee.id, date: startOfDay, isTest: false } },
     });
     if (!existing) {
       await prisma.attendance.create({

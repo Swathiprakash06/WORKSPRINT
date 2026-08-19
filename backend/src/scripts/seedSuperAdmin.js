@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const prisma = require('../db/prismaClient');
 
 const seedSuperAdmin = async () => {
-  const email = process.env.SUPER_ADMIN_EMAIL || 'superadmin@worksprint.com';
+  const email = process.env.SUPER_ADMIN_EMAIL || 'superadmin@workmate.com';
   const password = process.env.SUPER_ADMIN_PASSWORD || 'super123';
   const hashed = await bcrypt.hash(password, 10);
 

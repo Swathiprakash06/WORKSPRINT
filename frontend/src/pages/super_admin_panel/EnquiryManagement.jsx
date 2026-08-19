@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Search, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { employeeStyles } from '../../styles';
+import Pagination from '../../components/Pagination';
 
 const EnquiryManagement = ({ enquiries, setEnquiries, onAccept, onReject }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const filteredEnquiries = enquiries.filter(enquiry => {
     const matchesSearch = 
@@ -18,6 +21,7 @@ const EnquiryManagement = ({ enquiries, setEnquiries, onAccept, onReject }) => {
     
     return matchesSearch && matchesFilter;
   });
+  const pagedEnquiries = filteredEnquiries.slice((page - 1) * pageSize, page * pageSize);
 
   const handleAccept = async (id) => {
     if (onAccept) {
@@ -146,7 +150,7 @@ const EnquiryManagement = ({ enquiries, setEnquiries, onAccept, onReject }) => {
           </thead>
           <tbody>
             {filteredEnquiries.length > 0 ? (
-              filteredEnquiries.map(enquiry => (
+              pagedEnquiries.map(enquiry => (
                 <tr key={enquiry.id}>
                   <td className={employeeStyles.superAdminEnquiry.td}>{enquiry.companyName}</td>
                   <td className={employeeStyles.superAdminEnquiry.td}>{enquiry.hrName}</td>
@@ -190,6 +194,7 @@ const EnquiryManagement = ({ enquiries, setEnquiries, onAccept, onReject }) => {
             )}
           </tbody>
         </table>
+        <Pagination page={page} pageSize={pageSize} total={filteredEnquiries.length} onPageChange={setPage} />
       </div>
     </div>
   );

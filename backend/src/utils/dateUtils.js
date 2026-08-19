@@ -90,7 +90,8 @@ const isLate = (checkInTime, officeStart = '09:00', graceTime = 15) => {
   const [startHour, startMin] = officeStart.split(':').map(Number);
 
   const checkInMinutes = checkInHour * 60 + checkInMin;
-  const startMinutes = startHour * 60 + startMin + graceTime;
+  const graceMinutes = Number(graceTime);
+  const startMinutes = startHour * 60 + startMin + (Number.isFinite(graceMinutes) ? graceMinutes : 0);
 
   return checkInMinutes > startMinutes;
 };

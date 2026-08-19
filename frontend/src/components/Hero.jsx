@@ -12,16 +12,16 @@ const Hero = () => {
               <span>✨ AI-Powered HRMS Platform</span>
             </div>
             <h1 className={heroStyles.title}>
-              WORKSPRINT — <br />
+              WORKMATE — <br />
               A Smarter, <span className={heroStyles.highlight}>Compliant & Scalable</span> HRMS
             </h1>
             <p className={heroStyles.description}>
               One Platform. Complete HR & Payroll Control.
             </p>
             <p className={heroStyles.subtext}>
-              WorkSprint is a modern, API-driven HRMS and Payroll platform designed for growing organizations 
+              Workmate is a modern, API-driven HRMS and Payroll platform designed for growing organizations 
               that want accuracy, compliance, and speed—without complexity. From employee onboarding to 
-              payroll processing and performance appraisals, WorkSprint brings everything together in one 
+              payroll processing and performance appraisals, Workmate brings everything together in one 
               secure, scalable system.
             </p>
             <div className={heroStyles.buttonGroup}>

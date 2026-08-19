@@ -2,9 +2,11 @@
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { Plus, Trash2 } from 'lucide-react';
-import { eachDayOfInterval, format, parseISO, isValid } from 'date-fns';
+import { eachDayOfInterval, format, parseISO, isValid, differenceInCalendarDays } from 'date-fns';
 import { employeeStyles } from '../../styles';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, toLocalDateKey } from '../../utils/dateUtils';
+import TablePlaceholder from '../../components/TablePlaceholder';
+import Pagination from '../../components/Pagination';
 
 const HolidayDateMode = {
   SINGLE: 'single',
@@ -13,6 +15,8 @@ const HolidayDateMode = {
 };
 
 const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday }) => {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [formData, setFormData] = useState({
     name: '',
     singleDate: '',
@@ -124,6 +128,66 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
     toast.success('Holiday removed');
   };
 
+  const groupedHolidays = useMemo(() => {
+    const map = new Map();
+    (holidays || []).forEach((h) => {
+      const dateKey = toLocalDateKey(h.date);
+      if (!dateKey) return;
+      const list = map.get(h.name) || [];
+      list.push({ date: dateKey, id: h.id });
+      map.set(h.name, list);
+    });
+
+    const groups = [];
+    for (const [name, items] of map.entries()) {
+      const sorted = items.slice().sort((a, b) => a.date.localeCompare(b.date));
+      // build consecutive ranges
+      const ranges = [];
+      let curStart = null;
+      let curEnd = null;
+      let curIds = [];
+
+      const pushRange = () => {
+        if (!curStart) return;
+        ranges.push({ start: curStart, end: curEnd, ids: [...curIds] });
+        curStart = null; curEnd = null; curIds = [];
+      };
+
+      sorted.forEach((it) => {
+        const d = it.date;
+        if (!curStart) {
+          curStart = d; curEnd = d; curIds = [it.id];
+          return;
+        }
+        const prev = parseISO(`${curEnd}T12:00:00`);
+        const cur = parseISO(`${d}T12:00:00`);
+        const diff = differenceInCalendarDays(cur, prev);
+        if (diff === 1) {
+          curEnd = d; curIds.push(it.id);
+        } else {
+          pushRange();
+          curStart = d; curEnd = d; curIds = [it.id];
+        }
+      });
+      pushRange();
+
+      const summary = ranges.map((r) => {
+        const startDate = parseISO(`${r.start}T12:00:00`);
+        const endDate = parseISO(`${r.end}T12:00:00`);
+        if (!isValid(startDate) || !isValid(endDate)) {
+          return r.start === r.end ? r.start : `${r.start} — ${r.end}`;
+        }
+        if (r.start === r.end) return format(startDate, 'dd/MM/yyyy');
+        return `${format(startDate, 'dd/MM/yyyy')} — ${format(endDate, 'dd/MM/yyyy')}`;
+      }).join(', ');
+
+      groups.push({ name, ranges, summary });
+    }
+
+    return groups.sort((a, b) => a.name.localeCompare(b.name));
+  }, [holidays]);
+  const pagedHolidays = groupedHolidays.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div className={employeeStyles.requests.container}>
       <h1 className={employeeStyles.requests.title}>Holiday Management</h1>
@@ -142,7 +206,7 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
         </div>
 
         <div className={employeeStyles.requests.formGroup}>
-          <label className={employeeStyles.requests.label}>Holiday dates</label>
+          <label className={employeeStyles.requests.label}>Holiday dates *</label>
           <select
             value={holidayDateMode}
             onChange={(e) => setHolidayDateMode(e.target.value)}
@@ -175,6 +239,7 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
                 value={formData.rangeStart}
                 onChange={(e) => setFormData({ ...formData, rangeStart: e.target.value })}
                 className={employeeStyles.requests.input}
+                aria-required
               />
             </div>
             <div className={employeeStyles.requests.formGroup}>
@@ -184,6 +249,7 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
                 value={formData.rangeEnd}
                 onChange={(e) => setFormData({ ...formData, rangeEnd: e.target.value })}
                 className={employeeStyles.requests.input}
+                aria-required
               />
             </div>
           </div>
@@ -198,6 +264,7 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
                 value={multiPickDate}
                 onChange={(e) => setMultiPickDate(e.target.value)}
                 className={`${employeeStyles.requests.input} flex-1 min-w-[140px]`}
+                aria-required
               />
               <button
                 type="button"
@@ -247,20 +314,40 @@ const HolidayManagement = ({ holidays, setHolidays, addHoliday, deleteHoliday })
                 <th className={employeeStyles.table.th}>Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {holidays.map(holiday => (
-                <tr key={holiday.id}>
-                  <td className={employeeStyles.table.td}>{holiday.name}</td>
-                  <td className={employeeStyles.table.td}>{formatDate(holiday.date)}</td>
-                  <td className={employeeStyles.table.td}>
-                    <button onClick={() => handleDeleteHoliday(holiday.id)} className={employeeStyles.requests.deleteBtn}>
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            {groupedHolidays.length > 0 ? (
+              <tbody>
+                {pagedHolidays.map((group) => (
+                  <tr key={group.name}>
+                    <td className={employeeStyles.table.td}>{group.name}</td>
+                    <td className={employeeStyles.table.td}>{group.summary}</td>
+                    <td className={employeeStyles.table.td}>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Delete all dates for "${group.name}"?`)) return;
+                          // delete all ids in the ranges
+                          for (const r of group.ranges) {
+                            for (const id of r.ids) {
+                              try {
+                                await handleDeleteHoliday(id);
+                              } catch (err) {
+                                console.error('Failed to delete holiday id', id, err);
+                              }
+                            }
+                          }
+                        }}
+                        className={employeeStyles.requests.deleteBtn}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            ) : (
+              <TablePlaceholder columns={3} rows={3} showMessage={true} message="No entries" useTbody={true} />
+            )}
           </table>
+          <Pagination page={page} pageSize={pageSize} total={groupedHolidays.length} onPageChange={setPage} />
         </div>
       </div>
     </div>

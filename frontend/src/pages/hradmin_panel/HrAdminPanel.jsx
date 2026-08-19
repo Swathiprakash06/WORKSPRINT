@@ -1,12 +1,11 @@
 // admin/AdminPanel.jsx
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { apiGet, apiPost, apiPut, apiDelete, logoutApi } from '../../services/api';
 import { toLocalDateKey } from '../../utils/dateUtils';
 import HrAdminLayout from './HrAdminLayout';
 import Dashboard from './Dashboard';
-import EmployeeOnboarding from './EmployeeOnboarding';
 import ProfileSettings from '../../components/ProfileSettings';
 import LogoutConfirmation from '../../components/LogoutConfirmation';
 import EmployeeList from './EmployeeList';
@@ -14,17 +13,21 @@ import AttendanceSettings from './AttendanceSettings';
 import HolidayManagement from './HolidayManagement';
 import LocationRestriction from './LocationRestriction';
 import AttendanceMonitoring from './AttendanceMonitoring';
+import MonthlySalarySummary from './MonthlySalarySummary';
 import RequestsManagement from './RequestsManagement';
 import EmployeeHistory from './EmployeeHistory';
+import EmployeeQueriesManagement from './EmployeeQueriesManagement';
+import AdminQueries from '../../components/AdminQueries';
 
 const HrAdminPanel = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [employees, setEmployees] = useState([]);
   const [attendanceSettings, setAttendanceSettings] = useState({ officeStart: '09:00', officeEnd: '18:00', graceTime: 15, workHours: 8, locationLat: '', locationLng: '', locationRadius: 100 });
   const [holidays, setHolidays] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [todaySummary, setTodaySummary] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [employeeQueries, setEmployeeQueries] = useState([]);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const loadData = async () => {
@@ -33,13 +36,15 @@ const HrAdminPanel = () => {
       const role = sessionStorage.getItem('role');
       if (!token || role !== 'hrAdmin') throw new Error('Unauthorized');
 
-      const [employeesRes, settingsRes, holidaysRes, attendanceRes, leaveReqRes, lateReqRes] = await Promise.all([
+      const [employeesRes, settingsRes, holidaysRes, attendanceRes, todayRes, leaveReqRes, lateReqRes, queriesRes] = await Promise.all([
         apiGet('/api/v1/hr-admin/employees'),
         apiGet('/api/v1/hr-admin/settings'),
         apiGet('/api/v1/hr-admin/holidays'),
         apiGet('/api/v1/hr-admin/attendance'),
+        apiGet('/api/v1/hr-admin/attendance/today'),
         apiGet('/api/v1/hr-admin/leave-requests'),
         apiGet('/api/v1/hr-admin/late-requests'),
+        apiGet('/api/v1/hr-admin/queries'),
       ]);
 
       if (employeesRes && employeesRes.ok) {
@@ -59,8 +64,37 @@ const HrAdminPanel = () => {
           employeeName: row.employeeName || row.employee?.name || row.employee?.email || 'Unknown Employee',
           checkInTime: row.checkInTime || row.checkIn || null,
           checkOutTime: row.checkOutTime || row.checkOut || null,
+          salaryCredited: row.salaryCredited ?? false,
+          salaryAmount: row.salaryAmount ?? null,
+          hoursWorked: row.hoursWorked ?? row.totalHours ?? 0,
+          isTest: row.isTest ?? false,
+          markedByHr: row.markedByHr ?? false,
+          hrNote: row.hrNote ?? null,
         }));
         setAttendanceData(normalizedAttendance);
+      }
+      if (todayRes && todayRes.ok) {
+        const todayJson = await todayRes.json();
+        // normalize today records if present
+        if (todayJson && Array.isArray(todayJson.records)) {
+          const normalizedToday = todayJson.records.map((row) => ({
+            ...row,
+            date: toLocalDateKey(row.date),
+            employeeName: row.employeeName || row.employee?.name || row.employee?.email || 'Unknown Employee',
+            checkInTime: row.checkInTime || row.checkIn || null,
+            checkOutTime: row.checkOutTime || row.checkOut || null,
+            salaryCredited: row.salaryCredited ?? false,
+            salaryAmount: row.salaryAmount ?? null,
+            hoursWorked: row.hoursWorked ?? row.totalHours ?? 0,
+            isTest: row.isTest ?? false,
+            markedByHr: row.markedByHr ?? false,
+            hrNote: row.hrNote ?? null,
+            isSynthetic: row.isSynthetic ?? false,
+          }));
+          setTodaySummary({ ...todayJson, records: normalizedToday });
+        } else {
+          setTodaySummary(todayJson);
+        }
       }
       if (leaveReqRes && leaveReqRes.ok) {
         const leaveData = await leaveReqRes.json();
@@ -77,6 +111,9 @@ const HrAdminPanel = () => {
           employeeName: req.employee?.name || req.employee?.email || 'Unknown Employee'
         }));
         setRequests((prev) => [...prev, ...transformedLateData]);
+      }
+      if (queriesRes && queriesRes.ok) {
+        setEmployeeQueries(await queriesRes.json());
       }
 
     } catch (error) {
@@ -158,6 +195,7 @@ const HrAdminPanel = () => {
       if (!res.ok) throw new Error((await res.json()).message); 
       const updated = await res.json();
       setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      await loadData();
       toast.success('Request approved');
     } catch (error) {
       console.error('Approve request failed:', error);
@@ -203,14 +241,16 @@ const HrAdminPanel = () => {
       <HrAdminLayout onLogout={() => setShowLogoutConfirm(true)} adminName="HR Admin">
       <Routes>
         <Route path="/" element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard employees={employees} attendanceData={attendanceData} />} />
-        <Route path="onboarding" element={<EmployeeOnboarding setEmployees={setEmployees} employees={employees} />} />
+        <Route path="dashboard" element={<Dashboard employees={employees} attendanceData={attendanceData} todaySummary={todaySummary} />} />
         <Route path="employee-list" element={<EmployeeList employees={employees} setEmployees={setEmployees} />} />
         <Route path="attendance-settings" element={<AttendanceSettings settings={attendanceSettings} setSettings={handleSaveSettings} />} />
         <Route path="holiday-management" element={<HolidayManagement holidays={holidays} setHolidays={setHolidays} addHoliday={handleAddHoliday} deleteHoliday={handleDeleteHoliday} />} />
         <Route path="location-restriction" element={<LocationRestriction settings={attendanceSettings} setSettings={handleSaveSettings} />} />
-        <Route path="attendance-monitoring" element={<AttendanceMonitoring attendanceData={attendanceData} />} />
+        <Route path="attendance-monitoring" element={<AttendanceMonitoring attendanceData={attendanceData} employees={employees} onRefresh={loadData} />} />
+        <Route path="monthly-salary-summary" element={<MonthlySalarySummary employees={employees} />} />
         <Route path="requests-management" element={<RequestsManagement requests={requests} setRequests={setRequests} onApprove={handleApproveRequest} onReject={handleRejectRequest} />} />
+        <Route path="employee-queries" element={<EmployeeQueriesManagement queries={employeeQueries} setQueries={setEmployeeQueries} onRefresh={loadData} />} />
+        <Route path="super-admin-queries" element={<AdminQueries role="hrAdmin" />} />
         <Route path="employee-history" element={<EmployeeHistory employees={employees} attendanceData={attendanceData} requests={requests} />} />
         <Route path="profile" element={<ProfileSettings role="hrAdmin" />} />
       </Routes>

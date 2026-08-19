@@ -1,27 +1,59 @@
 // admin/EmployeeHistory.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, User } from 'lucide-react';
 import { employeeStyles } from '../../styles';
 import { formatDate, formatTime } from '../../utils/dateUtils';
+import { formatCurrency } from '../../utils/salaryUtils';
+import { apiGet } from '../../services/api';
 
 const EmployeeHistory = ({ employees, attendanceData, requests }) => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [salaryData, setSalaryData] = useState({ credits: [], employee: null });
+  const [loadingSalary, setLoadingSalary] = useState(false);
 
   const filteredEmployees = employees.filter(emp =>
     emp.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const employeeAttendance = selectedEmployee
-    ? attendanceData.filter(a => a.employeeId === selectedEmployee.id)
+    ? attendanceData
+        .filter(a => a.employeeId === selectedEmployee.id && !a.isTest)
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
     : [];
 
   const employeeRequests = selectedEmployee
     ? requests.filter(r => r.employeeId === selectedEmployee.id)
     : [];
 
-  const employeeLeaves = employeeRequests.filter(r => r.type === 'Leave' && r.status === 'approved');
+  const employeeLeaves = employeeRequests.filter(
+    r => String(r.type).toLowerCase() === 'leave' && r.status === 'approved'
+  );
   const employeeLateRecords = employeeAttendance.filter(a => a.status === 'late');
+
+  useEffect(() => {
+    if (!selectedEmployee) {
+      setSalaryData({ credits: [], employee: null });
+      return;
+    }
+
+    const loadSalary = async () => {
+      setLoadingSalary(true);
+      try {
+        const res = await apiGet(`/api/v1/hr-admin/employees/${selectedEmployee.id}/salary-credits`);
+        if (res.ok) {
+          setSalaryData(await res.json());
+        }
+      } catch (err) {
+        console.error('Failed to load salary history:', err);
+      } finally {
+        setLoadingSalary(false);
+      }
+    };
+    loadSalary();
+  }, [selectedEmployee]);
+
+  const monthlySalary = salaryData.employee?.monthlySalary ?? selectedEmployee?.monthlySalary;
 
   return (
     <div className={employeeStyles.history.container}>
@@ -61,7 +93,7 @@ const EmployeeHistory = ({ employees, attendanceData, requests }) => {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{emp.name}</p>
-                    <p className="text-xs opacity-75">{emp.role || 'No role'}</p>
+                    <p className="text-xs opacity-75">{emp.position || 'No position'}</p>
                   </div>
                 </div>
               </button>
@@ -77,9 +109,53 @@ const EmployeeHistory = ({ employees, attendanceData, requests }) => {
                 <h2 className="text-xl font-bold text-[#1F1A2E] mb-2">{selectedEmployee.name}</h2>
                 <p className="text-gray-600 text-sm">{selectedEmployee.email}</p>
                 <p className="text-gray-600 text-sm">{selectedEmployee.phone}</p>
-                <div className="flex gap-2 mt-3">
-                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{selectedEmployee.role || 'No role'}</span>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{selectedEmployee.position || 'No position'}</span>
                   <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">{selectedEmployee.department || 'No department'}</span>
+                  <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">
+                    Monthly Salary: {monthlySalary ? formatCurrency(monthlySalary) : 'Not assigned'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Daily Salary Credits */}
+              <div className={employeeStyles.history.section}>
+                <h3 className={employeeStyles.history.sectionTitle}>Daily Salary Credits</h3>
+                <div className={employeeStyles.history.tableContainer}>
+                  <table className={employeeStyles.history.table}>
+                    <thead>
+                      <tr>
+                        <th className={employeeStyles.history.th}>Date</th>
+                        <th className={employeeStyles.history.th}>Hours Worked</th>
+                        <th className={employeeStyles.history.th}>Status</th>
+                        <th className={employeeStyles.history.th}>Amount Credited</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingSalary ? (
+                        <tr><td colSpan="4" className="text-center py-4 text-gray-400">Loading...</td></tr>
+                      ) : salaryData.credits?.length > 0 ? (
+                        salaryData.credits.map((credit, idx) => (
+                          <tr key={idx} className={credit.salaryCredited ? '' : 'bg-red-50'}>
+                            <td className={employeeStyles.history.td}>{formatDate(credit.date)}</td>
+                            <td className={employeeStyles.history.td}>{credit.hoursWorked}h</td>
+                            <td className={employeeStyles.history.td}>
+                              {credit.salaryCredited ? (
+                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Credited</span>
+                              ) : (
+                                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Not Credited</span>
+                              )}
+                            </td>
+                            <td className={employeeStyles.history.td}>
+                              {credit.salaryCredited ? formatCurrency(credit.amountCredited) : '-'}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr><td colSpan="4" className="text-center py-4 text-gray-400">No salary records yet</td></tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -93,7 +169,9 @@ const EmployeeHistory = ({ employees, attendanceData, requests }) => {
                         <th className={employeeStyles.history.th}>Date</th>
                         <th className={employeeStyles.history.th}>Check-in</th>
                         <th className={employeeStyles.history.th}>Check-out</th>
+                        <th className={employeeStyles.history.th}>Hours</th>
                         <th className={employeeStyles.history.th}>Status</th>
+                        <th className={employeeStyles.history.th}>Salary</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -103,15 +181,19 @@ const EmployeeHistory = ({ employees, attendanceData, requests }) => {
                             <td className={employeeStyles.history.td}>{formatDate(att.date)}</td>
                             <td className={employeeStyles.history.td}>{formatTime(att.checkInTime || att.checkIn) || '-'}</td>
                             <td className={employeeStyles.history.td}>{formatTime(att.checkOutTime || att.checkOut) || '-'}</td>
+                            <td className={employeeStyles.history.td}>{att.totalHours ?? '-'}</td>
                             <td className={employeeStyles.history.td}>
                               <span className={employeeStyles.history.statusCell(att.status)}>
                                 {att.status}
                               </span>
                             </td>
+                            <td className={employeeStyles.history.td}>
+                              {att.salaryCredited ? formatCurrency(att.salaryAmount) : '—'}
+                            </td>
                           </tr>
                         ))
                       ) : (
-                        <tr><td colSpan="4" className="text-center py-4 text-gray-400">No attendance records</td></tr>
+                        <tr><td colSpan="6" className="text-center py-4 text-gray-400">No attendance records</td></tr>
                       )}
                     </tbody>
                   </table>

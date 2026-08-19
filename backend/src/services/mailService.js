@@ -15,10 +15,9 @@ const getResendClient = () => {
   return resend;
 };
 
-const sendWelcomeEmail = async (userData, createdByRole) => {
+const sendWelcomeEmail = async (userData) => {
   try {
-    const { name, email, password, role, designation, department, phone } = userData;
-    const roleName = role === 'hr_admin' ? 'HR Administrator' : 'Employee';
+    const { name, email, password, designation, department, phone } = userData;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -45,7 +44,7 @@ const sendWelcomeEmail = async (userData, createdByRole) => {
         <div class="container">
           <div class="header">
             <h1>Welcome to the Team! 🎉</h1>
-            <p>Your ${roleName} account has been created</p>
+            <p>Your account has been created</p>
           </div>
           <div class="content">
             <div class="welcome-text">
@@ -61,14 +60,13 @@ const sendWelcomeEmail = async (userData, createdByRole) => {
               <div class="credential-item">
                 <strong>Password:</strong> <code style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px;">${password}</code>
               </div>
-              ${role ? `<div class="credential-item"><strong>Role:</strong> ${roleName}</div>` : ''}
               ${designation ? `<div class="credential-item"><strong>Designation:</strong> ${designation}</div>` : ''}
               ${department ? `<div class="credential-item"><strong>Department:</strong> ${department}</div>` : ''}
               ${phone ? `<div class="credential-item"><strong>Phone:</strong> ${phone}</div>` : ''}
             </div>
 
             <div class="note">
-              <strong>🔐 Important Security Note:</strong>
+              <strong>Important Security Note:</strong>
               <p style="margin: 8px 0 0;">For security reasons, please change your password after your first login.</p>
             </div>
 
@@ -82,7 +80,7 @@ const sendWelcomeEmail = async (userData, createdByRole) => {
           </div>
           <div class="footer">
             <p>This is an automated message, please do not reply to this email.</p>
-            <p>&copy; ${new Date().getFullYear()} WORKSPRINT. All rights reserved.</p>
+            <p>&copy; ${new Date().getFullYear()} WORKMATE. All rights reserved.</p>
           </div>
         </div>
       </html>
@@ -95,9 +93,9 @@ const sendWelcomeEmail = async (userData, createdByRole) => {
     }
 
     const result = await client.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'WORKSPRINT <noreply@worksprint.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'WORKMATE <noreply@workmate.com>',
       to: [email],
-      subject: `Welcome to the Team! Your ${roleName} Account Details`,
+      subject: 'Welcome to the Team! Your Account Details',
       html: htmlContent,
     });
 
@@ -118,7 +116,7 @@ const sendMail = async (options) => {
 
   try {
     const result = await client.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'WORKSPRINT <noreply@worksprint.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'WORKMATE <noreply@workmate.com>',
       to: options.to,
       subject: options.subject,
       html: options.html,

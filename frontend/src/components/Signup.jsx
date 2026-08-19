@@ -73,7 +73,7 @@
 //                 </svg>
 //               </Link>
 //             </div>
-//             <p className={modalStyles.subtitle}>Join Worksprint to get started</p>
+//             <p className={modalStyles.subtitle}>Join Workmate to get started</p>
 //           </div>
 
 //           <form onSubmit={handleSubmit}>
@@ -245,7 +245,7 @@ const Signup = () => {
                 </svg>
               </Link>
             </div>
-            <p className={modalStyles.subtitle}>Join Worksprint to get started</p>
+            <p className={modalStyles.subtitle}>Join Workmate to get started</p>
           </div>
 
           <form onSubmit={handleSubmit}>

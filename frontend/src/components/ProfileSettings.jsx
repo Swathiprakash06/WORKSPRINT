@@ -66,18 +66,27 @@ const ProfileSettings = ({ role }) => {
   };
 
   const validatePhone = (phone) => {
-    return /^\d{10,}$/.test(String(phone || '').replace(/\D/g, ''));
+    const digits = String(phone || '').replace(/\D/g, '');
+    return digits.length === 0 || digits.length >= 7;
   };
 
   const handleSaveProfile = async () => {
     if (!profile) return;
 
     const newErrors = {};
-    if (!validateEmail(profile.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-    if (!isSuperAdmin && profile.phone && !validatePhone(profile.phone)) {
-      newErrors.phone = 'Phone must contain at least 10 digits';
+
+    if (isEmployee) {
+      if (!profile.name?.trim()) newErrors.name = 'Name is required';
+      if (profile.phone && !validatePhone(profile.phone)) {
+        newErrors.phone = 'Phone is invalid';
+      }
+    } else {
+      if (!validateEmail(profile.email)) {
+        newErrors.email = 'Invalid email format';
+      }
+      if (!isSuperAdmin && profile.phone && !validatePhone(profile.phone)) {
+        newErrors.phone = 'Phone is invalid';
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -88,13 +97,17 @@ const ProfileSettings = ({ role }) => {
 
     setSaving(true);
     try {
-      const payload = {
-        name: profile.name,
-        email: profile.email,
-      };
-      if (!isSuperAdmin) {
-        payload.phone = profile.phone;
-      }
+      const payload = isEmployee
+        ? {
+            name: profile.name.trim(),
+            phone: profile.phone,
+            employeeId: profile.employeeId.trim(),
+          }
+        : {
+            name: profile.name,
+            email: profile.email,
+            ...(!isSuperAdmin ? { phone: profile.phone } : {}),
+          };
 
       const res = await apiPut(endpoint, payload);
       if (!res.ok) {
@@ -132,6 +145,9 @@ const ProfileSettings = ({ role }) => {
 
     if (Object.keys(newErrors).length > 0) {
       setPasswordErrors(newErrors);
+      if (newErrors.newPassword) {
+        toast.error(newErrors.newPassword);
+      }
       return;
     }
 
@@ -143,7 +159,15 @@ const ProfileSettings = ({ role }) => {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Password change failed');
+        // Show specific error messages
+        if (err.message && err.message.toLowerCase().includes('current password')) {
+          toast.error(' Current password is incorrect');
+        } else if (err.message && err.message.toLowerCase().includes('password')) {
+          toast.error('Password must be at least 6 characters');
+        } else {
+          throw new Error(err.message || 'Password change failed');
+        }
+        return;
       }
 
       toast.success('Password changed successfully');
@@ -151,7 +175,7 @@ const ProfileSettings = ({ role }) => {
       setPasswordErrors({});
     } catch (error) {
       console.error('Password change error:', error);
-      toast.error(error.message || 'Could not change password');
+      toast.error(' ' + (error.message || 'Could not change password'));
     }
   };
 
@@ -165,22 +189,6 @@ const ProfileSettings = ({ role }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Account + profile (left) */}
         <div className="space-y-6 min-w-0">
-          <div className="bg-white rounded-lg border border-gray-200 p-5 sm:p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-600">Role</p>
-                <p className="font-medium text-gray-900 capitalize">
-                  {role === 'hrAdmin' ? 'HR Admin' : role === 'superAdmin' ? 'Super Admin' : 'Employee'}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600">Status</p>
-                <p className="font-medium text-green-600">Active</p>
-              </div>
-            </div>
-          </div>
-
           {canEditProfile && (
             <div className="bg-white rounded-lg border border-gray-200 p-5 sm:p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Profile</h2>
@@ -240,38 +248,71 @@ const ProfileSettings = ({ role }) => {
 
           {isEmployee && (
             <div className="bg-white rounded-lg border border-gray-200 p-5 sm:p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Details (Read-only)</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit Profile</h2>
               <div className="space-y-4">
+                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
                   <input
                     type="text"
                     value={profile.name || ''}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent outline-none transition ${
+                      profileErrors.name ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Full Name"
                   />
+                  {profileErrors.name && <p className="text-red-500 text-sm mt-1">{profileErrors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number *</label>
+                  <input
+                    type="tel"
+                    value={profile.phone || ''}
+                    onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent outline-none transition ${
+                      profileErrors.phone ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="10-digit mobile number"
+                  />
+                  {profileErrors.phone && <p className="text-red-500 text-sm mt-1">{profileErrors.phone}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Employee ID </label>
+                  <input
+                    type="text"
+                    value={profile.employeeId || ''}
+                    onChange={(e) => setProfile((p) => ({ ...p, employeeId: e.target.value }))}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent outline-none transition ${
+                      profileErrors.employeeId ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter your Employee ID"
+                  />
+                  {profileErrors.employeeId && (
+                    <p className="text-red-500 text-sm mt-1">{profileErrors.employeeId}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                   <input
                     type="email"
                     value={profile.email || ''}
                     disabled
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed here. Contact HR if needed.</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={profile.phone || ''}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                  />
-                </div>
-                <p className="text-sm text-gray-500">
-                  Your profile is managed by HR. Contact them to change these details.
-                </p>
+
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="w-full px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-[#9B4DFF] transition-colors font-medium disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Profile'}
+                </button>
               </div>
             </div>
           )}

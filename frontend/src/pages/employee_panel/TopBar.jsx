@@ -2,6 +2,7 @@
 import React from 'react';
 import { LogOut, User, Menu } from 'lucide-react';
 import { employeeStyles } from '../../styles';
+import NotificationBell from '../../components/NotificationBell';
 
 const TopBar = ({ user, onLogout, onMenuClick }) => {
   return (
@@ -17,11 +18,12 @@ const TopBar = ({ user, onLogout, onMenuClick }) => {
 
       {/* Logo */}
       <div className={employeeStyles.topbar.logo}>
-        WORKSPRINT DASHBOARD
+        WORKMATE DASHBOARD
       </div>
 
       {/* Right */}
       <div className={employeeStyles.topbar.rightSection}>
+        <NotificationBell role="employee" />
         <div className={employeeStyles.topbar.userInfo}>
             <User size={16} />
                 <span>Welcome {user.name}</span>

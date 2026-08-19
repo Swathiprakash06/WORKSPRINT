@@ -1,6 +1,6 @@
-# WORKSPRINT Backend
+# WORKMATE Backend
 
-Production-ready backend scaffold for the WORKSPRINT attendance management system.
+Production-ready backend scaffold for the WORKMATE attendance management system.
 
 ## Tech stack
 - Node.js + Express

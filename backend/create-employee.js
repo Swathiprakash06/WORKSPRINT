@@ -16,7 +16,7 @@ const createEmployee = async () => {
           phone: '1234567890',
         }
       });
-      console.log('✅ Organization created:', organization.companyName);
+      console.log('Organization created:', organization.companyName);
     }
 
     // Get an HR admin (use the one we created)
@@ -42,17 +42,17 @@ const createEmployee = async () => {
       }
     });
 
-    console.log('\n✅ EMPLOYEE CREATED SUCCESSFULLY!');
+    console.log('\nEMPLOYEE CREATED SUCCESSFULLY!');
     console.log('   Email:', employee.email);
     console.log('   Password:', password);
     console.log('   Employee ID:', employee.employeeId);
     console.log('   Status:', employee.status);
-    console.log('\n🔐 You can now login with these credentials!');
+    console.log('\nYou can now login with these credentials!');
 
     process.exit(0);
   } catch (error) {
     if (error.code === 'P2002') {
-      console.log('❌ Employee with this email already exists');
+      console.log(' Employee with this email already exists');
     } else {
       console.error('ERROR:', error.message);
     }

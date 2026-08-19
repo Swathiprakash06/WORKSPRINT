@@ -33,14 +33,14 @@ const ComparisonSection = () => {
             </span>
           </h2>
           <p className={comparisonStyles.description}>
-            See how WorkSprint transforms your HR operations compared to traditional tools
+            See how Workmate transforms your HR operations compared to traditional tools
           </p>
         </div>
         <div className={comparisonStyles.comparisonGrid}>
           <div className={comparisonStyles.proCard}>
             <div className={comparisonStyles.proCardGradient}></div>
             <div className={comparisonStyles.proBadge}>
-              WorkSprint
+              Workmate
             </div>
             <h3 className={comparisonStyles.proTitle}>
               Unified HR, Payroll & Compliance
@@ -100,7 +100,7 @@ const ComparisonSection = () => {
         {/* CTA Section */}
         <div className={comparisonStyles.ctaSection}>
           <h3 className={comparisonStyles.ctaTitle}>
-            Get Started with WorkSprint
+            Get Started with Workmate
           </h3>
           <p className={comparisonStyles.ctaDescription}>
             Simplify . Automate Payroll. Stay Compliant.
@@ -118,7 +118,7 @@ const ComparisonSection = () => {
         {/* Footer */}
         <div className={comparisonStyles.footer}>
           <p className={comparisonStyles.footerText}>
-            WorkSprint — powering modern HR operations, one organization at a time.
+            Workmate — powering modern HR operations, one organization at a time.
           </p>
         </div>
       </div>

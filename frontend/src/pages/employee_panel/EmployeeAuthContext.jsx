@@ -6,7 +6,7 @@ export const AuthProvider = ({ children }) => {
   const [employee, setEmployee] = useState({
     id: 1,
     name: 'John Doe',
-    email: 'john.doe@worksprint.com',
+    email: 'john.doe@workmate.com',
     role: 'employee'
   });
 
@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     // Implement login logic
     console.log('Login:', email, password);
     // Add actual authentication logic here
-    if (email === 'john.doe@worksprint.com' && password === 'password') {
+    if (email === 'john.doe@workmate.com' && password === 'password') {
       return true;
     }
     return false;

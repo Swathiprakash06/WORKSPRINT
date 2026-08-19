@@ -83,7 +83,7 @@ const ScaleSection = () => {
             </div>
             
             <h2 className={scaleStyles.title}>
-              WorkSprint is engineered for{' '}
+              Workmate is engineered for{' '}
               <span className={scaleStyles.highlight}>
                 modern organizations
               </span>
@@ -119,7 +119,7 @@ const ScaleSection = () => {
             
             <div className={scaleStyles.card}>
               <h3 className={scaleStyles.cardTitle}>
-                Who Is WorkSprint For?
+                Who Is Workmate For?
               </h3>
               
               <div className={scaleStyles.whoGrid}>

@@ -18,13 +18,26 @@ router.post('/attendance/check-in', [
   body('longitude').isFloat(),
   body('lateReason').optional().isString(),
 ], validateRequest, c.checkIn);
+router.post('/attendance/mark-absent', [
+  body('date').isISO8601(),
+], validateRequest, c.markAbsent);
 router.post('/attendance/check-out', [
   body('latitude').isFloat(),
   body('longitude').isFloat(),
   body('earlyCheckoutReason').optional().isString(),
 ], validateRequest, c.checkOut);
 router.get('/attendance/history', c.getAttendanceHistory);
+router.get('/attendance/export', c.exportAttendance);
 router.get('/attendance/monthly', [query('month').isInt({ min: 1, max: 12 }), query('year').isInt()], validateRequest, c.getMonthlySummary);
+router.get('/salary/daily', c.getDailySalary);
+router.get('/notifications', c.getNotifications);
+router.put('/notifications/:id/read', c.markNotificationRead);
+router.put('/notifications/read-all', c.markAllNotificationsRead);
+router.post('/queries', [
+  body('subject').notEmpty().trim(),
+  body('message').notEmpty().trim(),
+], validateRequest, c.submitQuery);
+router.get('/queries', c.getMyQueries);
 router.post('/leave-requests/batch', [
   body('type').notEmpty(),
   body('reason').notEmpty(),

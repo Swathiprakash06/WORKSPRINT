@@ -9,8 +9,6 @@ import Navbar from "./components/Navbar";
 import PayrollFlow from "./components/PayrollFlow.jsx";
 import ScaleSection from "./components/ScaleSection.jsx";
 import Login from "./components/Login";
-import ForgotPassword from "./components/ForgotPassword";
-import ResetPassword from "./components/ResetPassword";
 import Signup from "./components/Signup";
 import Enquiry from './components/Enquiry.jsx';
 import { Toaster } from 'react-hot-toast';
@@ -80,8 +78,6 @@ export default function App() {
         {/* Public routes with navbar */}
         <Route path="/" element={<Layout><HomePage /></Layout>} />
         <Route path="/login" element={<Layout><Login /></Layout>} />
-        <Route path="/forgot-password" element={<Layout><ForgotPassword /></Layout>} />
-        <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
         <Route path="/signup" element={<Layout><Signup /></Layout>} />
         <Route path="/enquiry" element={<Layout><Enquiry /></Layout>} />
         <Route 

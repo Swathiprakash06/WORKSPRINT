@@ -11,7 +11,7 @@ const EmployeeLayout = () => {
   return (
     <div className={employeeStyles.panel}>
       
-      {/* ✅ TOPBAR HERE */}
+      {/* TOPBAR HERE */}
       <TopBar 
         user={{ name: "Swathi" }} 
         onLogout={() => console.log("logout")}
@@ -20,7 +20,7 @@ const EmployeeLayout = () => {
 
       <div className={employeeStyles.mainContainer}>
         
-        {/* ✅ SIDEBAR */}
+        {/* SIDEBAR */}
         <Sidebar
           mobileOpen={mobileOpen}
           setMobileOpen={setMobileOpen}
@@ -28,7 +28,7 @@ const EmployeeLayout = () => {
           setIsCollapsed={setIsCollapsed}
         />
 
-        {/* ✅ CONTENT */}
+        {/* CONTENT */}
         <div className={employeeStyles.contentArea(isCollapsed)}>
           <Outlet />
         </div>

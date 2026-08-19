@@ -8,9 +8,10 @@ import Dashboard from './Dashboard';
 import EnquiryManagement from './EnquiryManagement';
 import OrganizationList from './OrganizationList';
 import CreateHRAdmin from './CreateHRAdmin';
-import ProfileSettings from '../../components/ProfileSettings';
 import LogoutConfirmation from '../../components/LogoutConfirmation';
+import ProfileSettings from '../../components/ProfileSettings';
 import { isOrganizationEligibleForHRAdmin } from '../../utils/organizationFilters';
+import AdminQueries from '../../components/AdminQueries';
 
 const SuperAdminPanel = () => {
   const navigate = useNavigate();
@@ -74,19 +75,6 @@ const SuperAdminPanel = () => {
     }
   };
 
-  const handleToggleOrganizationStatus = async (id) => {
-    try {
-      const res = await apiPost(`/api/v1/super-admin/organizations/${id}/suspend`);
-      if (!res.ok) throw new Error((await res.json()).message || 'Failed to toggle status');
-      const updatedOrg = await res.json();
-      setOrganizations((prev) => prev.map((org) => (org.id === id ? updatedOrg : org)));
-      toast.success('Organization status updated');
-    } catch (error) {
-      console.error('Toggle organization status error:', error);
-      toast.error(error.message || 'Failed to update organization');
-    }
-  };
-
   const handleCreateHRAdmin = async (payload) => {
     try {
       const res = await apiPost('/api/v1/super-admin/hr-admins', payload);
@@ -127,7 +115,9 @@ const SuperAdminPanel = () => {
         <Route path="/" element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard enquiries={enquiries} organizations={organizations} />} />
         <Route path="enquiry-management" element={<EnquiryManagement enquiries={enquiries} setEnquiries={setEnquiries} onAccept={handleAcceptEnquiry} onReject={handleRejectEnquiry} />} />
-        <Route path="organization-list" element={<OrganizationList organizations={organizations} setOrganizations={setOrganizations} onToggleStatus={handleToggleOrganizationStatus} />} />
+        <Route path="organization-list" element={<OrganizationList organizations={organizations} setOrganizations={setOrganizations} />} />
+        <Route path="hr-communications" element={<AdminQueries role="superAdmin" />} />
+        <Route path="profile" element={<ProfileSettings role="superAdmin" />} />
         <Route
           path="create-hr-admin"
           element={
@@ -137,7 +127,6 @@ const SuperAdminPanel = () => {
             />
           }
         />
-        <Route path="profile" element={<ProfileSettings role="superAdmin" />} />
       </Routes>
     </SuperAdminLayout>
     </>

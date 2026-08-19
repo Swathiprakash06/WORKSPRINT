@@ -18,7 +18,7 @@ const createHrAdmin = async () => {
           phone: '1234567890',
         }
       });
-      console.log('✅ Organization created:', organization.companyName);
+      console.log('Organization created:', organization.companyName);
     }
 
     // Hash the password
@@ -36,16 +36,16 @@ const createHrAdmin = async () => {
       }
     });
 
-    console.log('\n✅ HR ADMIN CREATED SUCCESSFULLY!');
+    console.log('\nHR ADMIN CREATED SUCCESSFULLY!');
     console.log('   Email:', hrAdmin.email);
     console.log('   Password:', password);
     console.log('   Status:', hrAdmin.status);
-    console.log('\n🔐 You can now login with these credentials!');
+    console.log('\nYou can now login with these credentials!');
 
     process.exit(0);
   } catch (error) {
     if (error.code === 'P2002') {
-      console.log('❌ HR admin with this email already exists');
+      console.log(' HR admin with this email already exists');
     } else {
       console.error('ERROR:', error.message);
     }

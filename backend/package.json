@@ -1,15 +1,18 @@
 {
-  "name": "worksprint-backend",
+  "name": "workmate-backend",
   "version": "1.0.0",
-  "description": "WORKSPRINT attendance management backend",
+  "description": "WORKMATE attendance management backend",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "build": "prisma generate && prisma migrate deploy",
+    "postinstall": "prisma generate",
     "seed": "node src/scripts/seedSuperAdmin.js",
     "prisma:generate": "prisma generate",
     "migrate": "prisma migrate dev --name init",
+    "migrate:deploy": "prisma migrate deploy",
     "lint": "eslint .",
     "test": "echo \"No tests yet\" && exit 0",
     "studio": "prisma studio",
@@ -32,7 +35,8 @@
     "nodemailer": "^6.9.4",
     "prisma": "5.9.0",
     "resend": "^6.10.0",
-    "winston": "^3.10.0"
+    "winston": "^3.10.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

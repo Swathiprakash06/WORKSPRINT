@@ -163,6 +163,7 @@ export const parseDate = (dateStr) => {
  * @param {string} checkInTime - Check-in time in HH:MM format
  * @param {string} officeStart - Office start time in HH:MM format (default: '09:00')
  * @param {number} graceTime - Grace time in minutes (default: 15)
+ * @param {number} graceTime - Grace time in minutes (default: 15)
  * @returns {boolean} True if late
  */
 export const isLate = (checkInTime, officeStart = '09:00', graceTime = 15) => {
@@ -172,7 +173,8 @@ export const isLate = (checkInTime, officeStart = '09:00', graceTime = 15) => {
   const [startHour, startMin] = officeStart.split(':').map(Number);
 
   const checkInMinutes = checkInHour * 60 + checkInMin;
-  const startMinutes = startHour * 60 + startMin + graceTime;
+  const graceMinutes = Number(graceTime);
+  const startMinutes = startHour * 60 + startMin + (Number.isFinite(graceMinutes) ? graceMinutes : 0);
 
   return checkInMinutes > startMinutes;
 };
@@ -183,14 +185,15 @@ export const isLate = (checkInTime, officeStart = '09:00', graceTime = 15) => {
  * @param {string} officeStart - Office start time in HH:MM format (default: '09:00')
  * @returns {number} Late duration in minutes
  */
-export const getLateDuration = (checkInTime, officeStart = '09:00') => {
+export const getLateDuration = (checkInTime, officeStart = '09:00', graceTime = 15) => {
   if (!checkInTime) return 0;
 
   const [checkInHour, checkInMin] = checkInTime.split(':').map(Number);
   const [startHour, startMin] = officeStart.split(':').map(Number);
 
   const checkInMinutes = checkInHour * 60 + checkInMin;
-  const startMinutes = startHour * 60 + startMin;
+  const graceMinutes = Number(graceTime);
+  const startMinutes = startHour * 60 + startMin + (Number.isFinite(graceMinutes) ? graceMinutes : 0);
 
   return Math.max(0, checkInMinutes - startMinutes);
 };
