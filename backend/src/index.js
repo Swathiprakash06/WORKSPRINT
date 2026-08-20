@@ -15,12 +15,30 @@ const employeeRoutes = require('./routes/employeeRoutes');
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 app.set("trust proxy", 1);
-app.use(cors({
-  origin: '*',
+
+// Build the allowlist from env. Supports comma-separated origins if you
+// ever need more than one (e.g. prod + a preview URL).
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((url) => url.trim().replace(/\/$/, '')) // strip trailing slash
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow requests with no origin (curl, server-to-server, mobile apps)
+    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      callback(null, true);
+    } else {
+      console.warn('Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(helmet({
   crossOriginResourcePolicy: false,
@@ -42,12 +60,7 @@ app.use('/api', apiLimiter);
 app.get('/', (req, res) => res.json({ message: 'WORKMATE Backend API' }));
 
 // Explicit OPTIONS handler for all routes
-app.options('*', cors({
-  origin: '*',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.options('*', cors(corsOptions));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/super-admin', superAdminRoutes);
