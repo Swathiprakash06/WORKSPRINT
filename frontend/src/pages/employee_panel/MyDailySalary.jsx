@@ -12,6 +12,7 @@ const MyDailySalary = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [entries, setEntries] = useState([]);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [perDaySalary, setPerDaySalary] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -26,6 +27,7 @@ const MyDailySalary = () => {
           const data = await res.json();
           setEntries(data.entries || []);
           setMonthlyTotal(data.monthlyTotal || 0);
+          setPerDaySalary(data.perDaySalary || 0);
         }
       } catch (err) {
         console.error('Failed to load salary credits:', err);
@@ -78,6 +80,7 @@ const MyDailySalary = () => {
           <div>
             <p className="text-sm opacity-90">Running total for {months[month - 1]} {year}</p>
             <p className="text-3xl font-bold">{formatCurrency(monthlyTotal)}</p>
+            <p className="mt-2 text-sm opacity-90">Per-day salary: <span className="font-semibold">{formatCurrency(perDaySalary)}</span></p>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ const { sendMail, sendWelcomeEmail } = require('../services/mailService');
 const { processSalaryCredit, formatDateLabel } = require('../services/salaryService');
 const { clearSalaryNotificationsForDate, createNotification, createHrNotification, notifyOrganizationEmployees } = require('../services/notificationService');
 const { createDateOnly, getCurrentDateString, parseDateFromFrontend, getMonthDateRange } = require('../utils/dateUtils');
+const { calculatePerDaySalary } = require('../utils/salaryUtils');
 
 const getDashboardStats = catchAsync(async (req, res) => {
   const { organizationId } = req.user;
@@ -750,6 +751,7 @@ const buildMonthlySalarySummary = async ({ organizationId, employeeId, month, ye
     daysAbsentOrLeave: absentOrLeaveDates.size,
     totalHours: Math.round(attendance.reduce((total, record) => total + (Number(record.totalHours) || 0), 0) * 100) / 100,
     salaryAssigned: employee.monthlySalary ?? 0,
+    perDaySalary: calculatePerDaySalary(employee.monthlySalary, year, month),
     salaryCreditedDays: credits.length,
     totalSalary: Math.round(credits.reduce((total, credit) => total + credit.amountCredited, 0) * 100) / 100,
   };

@@ -146,7 +146,7 @@ const MonthlySalarySummary = ({ employees = [] }) => {
               <div>
                 <p className="text-sm text-violet-100">Total Salary Obtained</p>
                 <p className="mt-1 text-4xl font-bold">{formatCurrency(summary.totalSalary)}</p>
-                <p className="mt-3 text-sm text-violet-100">{summary.employee.name} · Salary assigned: {formatCurrency(summary.salaryAssigned)}</p>
+                <p className="mt-3 text-sm text-violet-100">{summary.employee.name} · Salary assigned: {formatCurrency(summary.salaryAssigned)} · Per-day salary: {formatCurrency(summary.perDaySalary)}</p>
               </div>
               <div className="rounded-xl bg-white/15 p-3">
                 <IndianRupee size={30} aria-hidden="true" />

@@ -6,6 +6,7 @@ const catchAsync = require('../utils/catchAsync');
 const { isWithinRadius } = require('../services/locationService');
 const { createHrNotification } = require('../services/notificationService');
 const { createDateOnly, getCurrentDateString, getCurrentTimeString, isLate, parseDateFromFrontend } = require('../utils/dateUtils');
+const { calculatePerDaySalary } = require('../utils/salaryUtils');
 
 const minutesFromHHMM = (hhmm) => {
   if (!hhmm || typeof hhmm !== 'string') return 0;
@@ -510,6 +511,12 @@ const getDailySalary = catchAsync(async (req, res) => {
   const employeeId = Number(req.user.id);
   const creditWhere = { employeeId, isTest: false };
   const attendanceWhere = { employeeId, isTest: false };
+  const selectedMonth = month ? Number(month) : new Date().getMonth() + 1;
+  const selectedYear = year ? Number(year) : new Date().getFullYear();
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    select: { monthlySalary: true },
+  });
 
   if (month && year) {
     const start = new Date(Number(year), Number(month) - 1, 1);
@@ -580,6 +587,7 @@ const getDailySalary = catchAsync(async (req, res) => {
     credits,
     entries,
     monthlyTotal: Math.round(monthlyTotal * 100) / 100,
+    perDaySalary: calculatePerDaySalary(employee?.monthlySalary, selectedYear, selectedMonth),
     month: month ? Number(month) : null,
     year: year ? Number(year) : null,
   });
