@@ -144,9 +144,9 @@ const MonthlySalarySummary = ({ employees = [] }) => {
           <section className="mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] p-5 text-white shadow-sm sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-violet-100">Total Salary Obtained</p>
+                <p className="text-sm text-violet-100">Total Salary Obtained(· Per-day salary: {formatCurrency(summary.perDaySalary)})</p>
                 <p className="mt-1 text-4xl font-bold">{formatCurrency(summary.totalSalary)}</p>
-                <p className="mt-3 text-sm text-violet-100">{summary.employee.name} · Salary assigned: {formatCurrency(summary.salaryAssigned)} · Per-day salary: {formatCurrency(summary.perDaySalary)}</p>
+                <p className="mt-3 text-sm text-violet-100">{summary.employee.name} · Salary assigned: {formatCurrency(summary.salaryAssigned)} </p>
               </div>
               <div className="rounded-xl bg-white/15 p-3">
                 <IndianRupee size={30} aria-hidden="true" />
