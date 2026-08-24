@@ -854,8 +854,7 @@ const simulateAttendance = catchAsync(async (req, res) => {
 
   let dateOnly;
   if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    const [year, month, day] = date.split('-').map(Number);
-    dateOnly = new Date(year, month - 1, day);
+    dateOnly = createDateOnly(date);
   } else {
     dateOnly = createDateOnly(new Date());
   }

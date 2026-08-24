@@ -100,8 +100,7 @@ const checkIn = catchAsync(async (req, res) => {
   // Use client's date if provided, otherwise calculate
   let dateOnly;
   if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
-    const [year, month, day] = clientDate.split('-').map(Number);
-    dateOnly = new Date(year, month - 1, day);
+    dateOnly = createDateOnly(clientDate);
   } else {
     const today = new Date();
     dateOnly = createDateOnly(today);
@@ -216,8 +215,7 @@ const checkOut = catchAsync(async (req, res) => {
   // Use client's date if provided, otherwise calculate
   let dateOnly;
   if (clientDate && /^\d{4}-\d{2}-\d{2}$/.test(clientDate)) {
-    const [year, month, day] = clientDate.split('-').map(Number);
-    dateOnly = new Date(year, month - 1, day);
+    dateOnly = createDateOnly(clientDate);
   } else {
     const today = new Date();
     dateOnly = createDateOnly(today);

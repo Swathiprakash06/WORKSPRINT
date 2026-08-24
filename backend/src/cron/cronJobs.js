@@ -1,11 +1,10 @@
 const cron = require('node-cron');
 const prisma = require('../db/prismaClient');
-const { getIndiaNow } = require('../utils/dateUtils');
+const { createDateOnly, getIndiaNow } = require('../utils/dateUtils');
 
 const markAbsentAfterHours = async () => {
   const today = getIndiaNow();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+  const startOfDay = createDateOnly(today);
 
   // Fetch all employees and set attendance absent if no record for today
   const employees = await prisma.employee.findMany({ where: { status: 'active' } });

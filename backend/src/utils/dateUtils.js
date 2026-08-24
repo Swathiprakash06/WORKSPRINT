@@ -46,7 +46,7 @@ const createDateOnly = (date) => {
     // If it's already in YYYY-MM-DD format, parse it directly
     if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       const [year, month, day] = date.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day);
+      return new Date(Date.UTC(year, month - 1, day));
     } else {
       dateObj = parseISO(date);
     }
@@ -57,7 +57,7 @@ const createDateOnly = (date) => {
   if (!isValid(dateObj)) return null;
 
   const parts = getTimeZoneDateParts(dateObj);
-  return new Date(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
+  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)));
 };
 
 /**
