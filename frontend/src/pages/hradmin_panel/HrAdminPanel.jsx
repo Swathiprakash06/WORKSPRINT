@@ -108,6 +108,7 @@ const HrAdminPanel = () => {
         const lateData = await lateReqRes.json();
         const transformedLateData = lateData.map(req => ({
           ...req,
+          type: 'Late Regularization',
           employeeName: req.employee?.name || req.employee?.email || 'Unknown Employee'
         }));
         setRequests((prev) => [...prev, ...transformedLateData]);
@@ -189,12 +190,15 @@ const HrAdminPanel = () => {
     }
   };
 
-  const handleApproveRequest = async (id) => {
+  const handleApproveRequest = async (request) => {
     try {
-      const res = await apiPut(`/api/v1/hr-admin/leave-requests/${id}/approve`);
+      const requestType = request.type === 'Late Regularization' ? 'late-requests' : 'leave-requests';
+      const res = await apiPut(`/api/v1/hr-admin/${requestType}/${request.id}/approve`);
       if (!res.ok) throw new Error((await res.json()).message); 
       const updated = await res.json();
-      setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      setRequests((prev) => prev.map((r) => (
+        r.id === request.id && r.type === request.type ? { ...updated, type: request.type, employeeName: request.employeeName } : r
+      )));
       await loadData();
       toast.success('Request approved');
     } catch (error) {
@@ -203,12 +207,15 @@ const HrAdminPanel = () => {
     }
   };
 
-  const handleRejectRequest = async (id) => {
+  const handleRejectRequest = async (request) => {
     try {
-      const res = await apiPut(`/api/v1/hr-admin/leave-requests/${id}/reject`);
+      const requestType = request.type === 'Late Regularization' ? 'late-requests' : 'leave-requests';
+      const res = await apiPut(`/api/v1/hr-admin/${requestType}/${request.id}/reject`);
       if (!res.ok) throw new Error((await res.json()).message); 
       const updated = await res.json();
-      setRequests((prev) => prev.map((r) => (r.id === id ? updated : r)));
+      setRequests((prev) => prev.map((r) => (
+        r.id === request.id && r.type === request.type ? { ...updated, type: request.type, employeeName: request.employeeName } : r
+      )));
       toast.success('Request rejected');
     } catch (error) {
       console.error('Reject request failed:', error);

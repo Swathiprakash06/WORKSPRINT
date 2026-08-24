@@ -20,26 +20,26 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
   });
   const pagedRequests = filteredRequests.slice((page - 1) * pageSize, page * pageSize);
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (request) => {
     if (onApprove) {
-      await onApprove(id);
+      await onApprove(request);
       return;
     }
 
     setRequests(requests.map(req =>
-      req.id === id ? { ...req, status: 'approved' } : req
+      req.id === request.id && req.type === request.type ? { ...req, status: 'approved' } : req
     ));
     toast.success('Request approved');
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (request) => {
     if (onReject) {
-      await onReject(id);
+      await onReject(request);
       return;
     }
 
     setRequests(requests.map(req =>
-      req.id === id ? { ...req, status: 'rejected' } : req
+      req.id === request.id && req.type === request.type ? { ...req, status: 'rejected' } : req
     ));
     toast.success('Request rejected');
   };
@@ -82,7 +82,7 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
           </thead>
           <tbody>
             {pagedRequests.map(req => (
-              <tr key={req.id}>
+              <tr key={`${req.type}-${req.id}`}>
                 <td className={employeeStyles.table.td}>{req.employeeName}</td>
                 <td className={employeeStyles.table.td}>{req.type}</td>
                 <td className={employeeStyles.table.td}>{req.reason}</td>
@@ -93,13 +93,13 @@ const RequestsManagement = ({ requests, setRequests, onApprove, onReject }) => {
                   {req.status === 'pending' && (
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => handleApprove(req.id)} 
+                        onClick={() => handleApprove(req)} 
                         className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
                       >
                         <CheckCircle size={16} />
                       </button>
                       <button 
-                        onClick={() => handleReject(req.id)} 
+                        onClick={() => handleReject(req)} 
                         className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
                       >
                         <XCircle size={16} />
